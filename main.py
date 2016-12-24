@@ -1,19 +1,17 @@
 import units
 import policy
 import algo
-import networkx as nx
-import matplotlib.pyplot as plt
-import random
+import network_factory
+import buffer
 
 
 class Sim(object):
     """
     The main class for configuring and running the simulation.
     """
-    def __init__(self, alg_type, net, routes, policy_list, cycles=50, verbose=False):
+    def __init__(self, alg_type, net, policy_list, buffer_type, cycles=50, verbose=False):
         self.algo = alg_type(self)
         self.net = net
-        self.routes = routes
         self.policy = policy_list
         self.cycle_number = cycles
         self.verbose = verbose
@@ -22,12 +20,11 @@ class Sim(object):
         self.curr_cycle = 0
 
         for node_name in net.nodes():
-            node = units.Node(node_name, self)
-            node.set_route(routes[node_name])
+            node = units.Node(node_name, self, buffer_type)
             self.nodes[node_name] = node
 
-        for node_name, policy in policy_list:
-            node = self.nodes[node_name]
+        for policy in policy_list:
+            node = self.nodes[policy.src]
             node.add_policy(policy)
 
     # The cycle has two phases:
@@ -61,42 +58,14 @@ class Sim(object):
             node.print_state()
 
 
-def predecessor_to_routing_table(pd_for_node, node_name):
-    routing_table = {}
-    nodes = pd_for_node.keys()
-    while nodes:
-        next_nodes = []
-        for node in nodes:
-            adj_node = pd_for_node[node]
-            if adj_node == node_name:
-                routing_table[node] = node
-            elif adj_node in routing_table.keys():
-                routing_table[node] = routing_table[adj_node]
-            else:
-                next_nodes.append(node)
-        nodes = next_nodes
-    return routing_table
-
-
 if __name__ == '__main__':
-    random.seed(0)
+    # net = network_factory.create_random_weighted_dag(10)
+    net = network_factory.create_path_graph(10)
+    # network_factory.draw(net)
 
-    # Create simulation
-    net = nx.path_graph(4)
-    net.get_edge_data(0, 1)['cap'] = 3
-
-    predecessor_dict = nx.floyd_warshall_predecessor_and_distance(net)[0]
-    routes = {}
-    for k, v in predecessor_dict.iteritems():
-        routes[k] = predecessor_to_routing_table(v, k)
-
-    policy = [(0, policy.SendEachCycleTo(3))]
+    policy = [policy.SendEachCycleRR(0, net, 9), policy.SendEachCycleRR(4, net, 6)]
     cycles = 100
     verbose = False
 
-    if False:
-        nx.draw(net)
-        plt.show()
-
-    s = Sim(algo.PassIfEmpty, net, routes, policy, cycles, verbose)
+    s = Sim(algo.PassIfEmpty, net, policy, buffer.LongestInSystem, cycles, verbose)
     s.run()

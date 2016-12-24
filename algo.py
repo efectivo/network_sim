@@ -4,14 +4,15 @@ class Algo(object):
         self.is_distributed = None
 
     def run(self):
+        # Send and receive packets from previous cycle
+        for node in self.services.nodes.values():
+            node.send()
+
         if self.is_distributed:
             for node in self.services.nodes.values():
                 self.run_distributed(node)
         else:
             self.run_centralized()
-
-        for node in self.services.nodes.values():
-            node.send()
 
     def run_distributed(self, node):
         pass
@@ -31,6 +32,7 @@ class PassIfEmpty(Algo):
     def run_distributed(self, node):
         for next_node_name, buf in node.buffers.iteritems():
             next_node = self.services.nodes[next_node_name]
-            if buf.qsize() > 0 and next_node.current_total_packets == 0:
+            if len(buf) and next_node.current_total_packets == 0:
                 node.prepare_packets_for_send(next_node_name)
+
 
