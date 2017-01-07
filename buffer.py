@@ -4,7 +4,7 @@ import heapq
 
 class BufferIfc(object):
     def __init__(self):
-        pass
+        self.values = None
 
     def insert(self, packet):
         pass
@@ -19,6 +19,7 @@ class BufferIfc(object):
 class Fifo(BufferIfc):
     def __init__(self):
         self.queue = Queue.Queue()
+        self.values = self.queue
 
     def insert(self, packet):
         self.queue.put(packet)
@@ -33,6 +34,7 @@ class Fifo(BufferIfc):
 class Lifo(BufferIfc):
     def __init__(self):
         self.stack = []
+        self.values = self.stack
 
     def insert(self, packet):
         self.stack.append(packet)
@@ -47,6 +49,7 @@ class Lifo(BufferIfc):
 class LongestInSystem(BufferIfc):
     def __init__(self):
         self.heap = []
+        self.values = self.heap
 
     def insert(self, packet):
         heapq.heappush(self.heap, (packet.invoke_cycle, packet))

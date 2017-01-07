@@ -1,10 +1,10 @@
 import units
 import networkx as nx
+import random
 
 
 class Policy(object):
-    def __init__(self, src, net):
-        self.src = src
+    def __init__(self, net):
         self.net = net
 
     def invoke(self):
@@ -29,7 +29,7 @@ class Policy(object):
 
 class SendEachCycleRR(Policy):
     def __init__(self, src, net, dst):
-        Policy.__init__(self, src, net)
+        Policy.__init__(self, net)
         self.name = 'sec_{}->{}'.format(src, dst)
         self.all_paths = list(nx.all_simple_paths(net, source=src, target=dst))
         for p in self.all_paths:
@@ -39,4 +39,17 @@ class SendEachCycleRR(Policy):
     def invoke(self, curr_cycle):
         p = units.Packet(self.name, self.all_paths[self.curr_path], curr_cycle)
         self.curr_path = (self.curr_path + 1) % len(self.all_paths)
-        return [p,]
+        return [p]
+
+
+class RandomSrcSameDest(Policy):
+    def __init__(self, net):
+        Policy.__init__(self, net)
+        self.nodes_num = len(net.nodes())
+        self.name = '{}<-'.format(self.nodes_num-1)
+        self.path = range(self.nodes_num)
+
+    def invoke(self, curr_cycle):
+        next_node = random.randint(0, self.nodes_num - 1)
+        p = units.Packet(self.name+str(next_node), self.path[next_node:], curr_cycle)
+        return [p]
