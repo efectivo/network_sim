@@ -7,7 +7,7 @@ class Policy(object):
     def __init__(self, net):
         self.net = net
 
-    def invoke(self):
+    def invoke(self, curr_cycle):
         pass
 
     # Assert that the injection policy is valid
@@ -43,13 +43,50 @@ class SendEachCycleRR(Policy):
 
 
 class RandomSrcSameDest(Policy):
-    def __init__(self, net):
+    def __init__(self, net, src_list, dst):
         Policy.__init__(self, net)
-        self.nodes_num = len(net.nodes())
-        self.name = '{}<-'.format(self.nodes_num-1)
-        self.path = range(self.nodes_num)
+        self.dst = dst
+        self.src_list = src_list
+        self.src_max_index = len(src_list) - 1
+        self.name = '{}<-'.format(dst)
+        self.paths = nx.all_pairs_shortest_path(net)
 
     def invoke(self, curr_cycle):
-        next_node = random.randint(0, self.nodes_num - 1)
-        p = units.Packet(self.name+str(next_node), self.path[next_node:], curr_cycle)
+        src = self.src_list[random.randint(0, self.src_max_index)]
+        path = self.paths[src][self.dst]
+        p = units.Packet(self.name+str(src), path, curr_cycle)
         return [p]
+
+
+class OnOff(Policy):
+    def __init__(self, net, src, dst, p_on, p_off, n_packets=1):
+        Policy.__init__(self, net)
+        self.name = '{}<-{}'.format(dst, src)
+        self.src = src
+        self.dst = dst
+        self.route = nx.shortest_path(self.net, self.src, self.dst)
+        self.p_on = p_on
+        self.p_off = p_off
+        self.invoke = self.invoke_off
+        self.n_packets = n_packets
+
+    # In OFF state, with p_on switch to ON
+    def invoke_off(self, curr_cycle):
+        if random.random() > self.p_on:
+            return None
+        self.invoke = self.invoke_on
+        return self.invoke_packets(curr_cycle)
+
+    def invoke_on(self, curr_cycle):
+        if random.random() < self.p_off:
+            self.invoke = self.invoke_off
+        return self.invoke_packets(curr_cycle)
+
+    def invoke_packets(self, curr_cycle):
+        return [units.Packet(self.name, self.route, curr_cycle) for _ in xrange(self.n_packets)]
+
+
+
+
+
+

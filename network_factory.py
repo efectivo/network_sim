@@ -14,9 +14,23 @@ def create_path_graph(n, cap=None):
     if not cap: # cap == 1 by default
         return g
 
-    for _,vd in g.edge.iteritems():
-        for _,d in vd.iteritems():
-            d['cap'] = 2
+    for _, vd in g.edge.iteritems():
+        for _, d in vd.iteritems():
+            d['cap'] = cap
+    return g
+
+
+def create_tree_from_split_list(split_input):
+    g = nx.DiGraph()
+    nodes_num = sum(split_input) + 1
+    [g.add_node(i) for i in range(nodes_num)]
+
+    next_node = 1
+    for n, split in enumerate(split_input):
+        for _ in range(split):
+            g.add_edge(n, next_node)
+            next_node += 1
+    g = nx.reverse(g)
     return g
 
 
@@ -26,6 +40,5 @@ def draw(g):
     n = len(g.nodes())
     nx.draw_networkx_labels(g, pos, dict(zip(range(n), range(n))))
     labels = nx.get_edge_attributes(g, 'cap')
-    #print labels
     nx.draw_networkx_edge_labels(g, pos, edge_labels=labels)
     plt.show()

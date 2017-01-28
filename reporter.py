@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+import collections
+import logging
+import networkx as nx
 
 
 class Reporter(object):
@@ -10,41 +10,88 @@ class Reporter(object):
     This class collect the statistics and aggregate them.
     Print simulation summary at the end.
     """
-    def __init__(self, services, cycle_num):
+    def __init__(self, services, calc_history=False):
         self.services = services
         self.total_packets_sent = 0
         self.total_packets_recv = 0
-        self.total_cycles = 0
-        self.stats = {}
-        self.df = None
+        self.invoke_logger = logging.getLogger('invoke')
+        self.receive_logger = logging.getLogger('receive')
+
+        # For animation
+        self.fig = None
+        self.new_packets = collections.defaultdict(int)
+
+        self.calc_history = calc_history
+        if calc_history:
+            self.packet_delay = collections.OrderedDict()
+            self.stats = {}
+            self.df = None
+            self.packet_delay_df = None
+            self.packet_received = self.packet_received_history
+            self.update_buffer_size = self.update_buffer_size_history
+        else:
+            self.total_delay = 0
+            self.curr_max_buffer_size = 0
+            self.curr_max_packet_delay = 0
+            self.packet_received = self.packet_received_fast
+            self.update_buffer_size = self.update_buffer_size_fast
 
     def packets_invoked(self, packets):
         self.total_packets_sent += len(packets)
+        if self.services.verbose:
+            for packet in packets:
+                self.new_packets[packet.route[0]] += 1
+                self.invoke_logger.debug(packet)
 
-    def packet_received(self, packet):
+    def packet_received_fast(self, packet):
         self.total_packets_recv += 1
-        self.total_cycles += self.services.curr_cycle - packet.invoke_cycle
+        max_packet_delay = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
+        self.curr_max_packet_delay = max(max_packet_delay, self.curr_max_packet_delay)
+        self.total_delay += max_packet_delay
 
-    def update_buffer_size(self, name, curr_max_buffer_size, curr_mean_buffer_size):
+    def packet_received_history(self, packet):
+        self.total_packets_recv += 1
+        self.packet_delay[str(packet)] = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
+        if self.services.verbose:
+            self.receive_logger.debug(packet)
+
+    def update_buffer_size_fast(self, name, curr_max_buffer_size, curr_mean_buffer_size):
+        self.curr_max_buffer_size = max(self.curr_max_buffer_size, curr_max_buffer_size)
+
+    def update_buffer_size_history(self, name, curr_max_buffer_size, curr_mean_buffer_size):
         self.stats[(name, self.services.curr_cycle)] = (curr_max_buffer_size, curr_mean_buffer_size)
 
     def finalize(self):
-        df = pd.DataFrame(self.stats).T
-        df.columns = ['BUF', 'MEAN_BUF'] # Relevant only when there is more than one port
-        df.index.names = ['NODE', 'CYCLE']
-        self.df = df.reset_index()
+        if self.calc_history:
+            df = pd.DataFrame(self.stats).T
+            df.columns = ['BUF', 'MEAN_BUF'] # Relevant only when there is more than one port
+            df.index.names = ['NODE', 'CYCLE']
+            self.df = df.reset_index()
+            self.packet_delay_df = pd.Series(self.packet_delay.values())
 
     def print_stats(self):
-        print 'Total sent: {}'.format(self.total_packets_sent)
-        print 'Total recv: {}'.format(self.total_packets_recv)
-        print 'Avg cycles: {}'.format(self.total_cycles / self.total_packets_recv)
+        self.services.logger.info('Total sent: {}'.format(self.total_packets_sent))
+        self.services.logger.info('Total recv: {}'.format(self.total_packets_recv))
+
+        if not self.calc_history:
+            self.services.logger.info('Max packet delay: {}'.format(self.curr_max_packet_delay))
+            if self.total_packets_recv > 0:
+                self.services.logger.info('Average packet delay: {}'.format(1.0*self.total_delay/self.total_packets_recv))
+            self.services.logger.info('Max buffer size: {}'.format(self.curr_max_buffer_size))
 
     def plot_graphs(self):
+        if not self.calc_history:
+            return
+
         df = self.df.groupby('CYCLE').BUF
         df.agg(['max', 'mean']).plot(title='Buffer statistics per node')
         plt.show()
 
     def plot_buffer_state(self):
+        from mpl_toolkits.mplot3d import Axes3D
+        if not self.calc_history:
+            return
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         df = self.df
@@ -54,3 +101,24 @@ class Reporter(object):
         ax.set_ylabel('NODE_ID')
 
         plt.show()
+
+    def animate(self):
+        if not self.fig:
+            self.fig = plt.figure()
+            #self.ax = plt.gca()
+            #self.fig, self.ax = plt.subplots()
+            self.pos = nx.spring_layout(self.services.net)
+            # pos = nx.spectral_layout(g)
+
+        self.fig.clear()
+        nx.draw(self.services.net, self.pos)
+        labels = {}
+        for node_name, node in self.services.nodes.iteritems():
+            labels[node_name] = '{}:{},{}'.format(node_name, node.curr_total_packets, self.new_packets[node_name])
+
+        #labels = dict([(node.name, node.curr_total_packets) for node in self.services.nodes.values()])
+        nx.draw_networkx_labels(self.services.net, self.pos, labels)
+        self.fig.show()
+        self.fig.suptitle(self.services.curr_cycle)
+        plt.pause(1)
+        self.new_packets = collections.defaultdict(int)

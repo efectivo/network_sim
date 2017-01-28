@@ -1,4 +1,5 @@
 import collections
+import logging
 
 
 class Packet(object):
@@ -19,13 +20,12 @@ class Packet(object):
         return '{}_{}'.format(self.policy_name, self.invoke_cycle)
 
 
-# Node in the graph, has packet buffer per neighbor,
-# can send and receive packets
 class Node(object):
     def __init__(self, name, services, buffer_type):
         self.name = name
         self.services = services
         self.buffers = collections.defaultdict(buffer_type)
+        self.unit_logger = logging.getLogger('node_{}'.format(name))
 
         self.curr_total_packets = 0
         self.curr_max_buffer_size = 0
@@ -39,7 +39,7 @@ class Node(object):
         next_node = packet.get_next_hop()
 
         # Packet has reached destination
-        if not next_node:
+        if next_node is None:
             self.services.reporter.packet_received(packet)
             return
 
@@ -51,6 +51,7 @@ class Node(object):
         for next_node, packets in self.received_packets.iteritems():
             buf = self.buffers[next_node]
             for packet in packets:
+                self.unit_logger.debug(packet)
                 buf.insert(packet)
             self.curr_total_packets += len(packets)
         self.received_packets = collections.defaultdict(list)
@@ -76,8 +77,4 @@ class Node(object):
             self.curr_total_packets -= 1
             next_node = self.services.nodes[next_node_name]
             next_node.receive(packet)
-
-    def print_state(self):
-        for node, buf in self.buffers.iteritems():
-            print '{}->{}: {}'.format(self, node, len(buf))
 
