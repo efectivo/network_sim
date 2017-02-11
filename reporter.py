@@ -48,23 +48,24 @@ class Reporter(object):
         max_packet_delay = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
         self.curr_max_packet_delay = max(max_packet_delay, self.curr_max_packet_delay)
         self.total_delay += max_packet_delay
+        self.receive_logger.debug(packet)
 
     def packet_received_history(self, packet):
         self.total_packets_recv += 1
         self.packet_delay[str(packet)] = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
-        if self.services.verbose:
-            self.receive_logger.debug(packet)
+        #if self.services.verbose:
+        self.receive_logger.debug(packet)
 
-    def update_buffer_size_fast(self, name, curr_max_buffer_size, curr_mean_buffer_size):
+    def update_buffer_size_fast(self, name, curr_max_buffer_size):
         self.curr_max_buffer_size = max(self.curr_max_buffer_size, curr_max_buffer_size)
 
-    def update_buffer_size_history(self, name, curr_max_buffer_size, curr_mean_buffer_size):
-        self.stats[(name, self.services.curr_cycle)] = (curr_max_buffer_size, curr_mean_buffer_size)
+    def update_buffer_size_history(self, name, curr_max_buffer_size):
+        self.stats[(name, self.services.curr_cycle)] = (curr_max_buffer_size,)
 
     def finalize(self):
         if self.calc_history:
             df = pd.DataFrame(self.stats).T
-            df.columns = ['BUF', 'MEAN_BUF'] # Relevant only when there is more than one port
+            df.columns = ['BUF'] # Relevant only when there is more than one port
             df.index.names = ['NODE', 'CYCLE']
             self.df = df.reset_index()
             self.packet_delay_df = pd.Series(self.packet_delay.values())
@@ -105,20 +106,21 @@ class Reporter(object):
     def animate(self):
         if not self.fig:
             self.fig = plt.figure()
-            #self.ax = plt.gca()
-            #self.fig, self.ax = plt.subplots()
             self.pos = nx.spring_layout(self.services.net)
             # pos = nx.spectral_layout(g)
 
         self.fig.clear()
-        nx.draw(self.services.net, self.pos)
         labels = {}
+        node_color = []
         for node_name, node in self.services.nodes.iteritems():
-            labels[node_name] = '{}:{},{}'.format(node_name, node.curr_total_packets, self.new_packets[node_name])
+            labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
+            node_color.append('r' if self.new_packets[node_name] else 'g')
 
-        #labels = dict([(node.name, node.curr_total_packets) for node in self.services.nodes.values()])
-        nx.draw_networkx_labels(self.services.net, self.pos, labels)
+        nx.draw_networkx(self.services.net, self.pos, labels=labels,
+                         node_size=1600, node_color=node_color,
+                         node_shape='s', font_size=15)
+
         self.fig.show()
-        self.fig.suptitle(self.services.curr_cycle)
-        plt.pause(1)
+        self.fig.suptitle(self.services.curr_cycle, fontsize=20)
+        plt.pause(5)
         self.new_packets = collections.defaultdict(int)

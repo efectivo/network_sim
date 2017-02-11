@@ -45,6 +45,7 @@ class Sim(object):
 
     def run(self):
         while self.curr_cycle < self.cycle_number:
+            self.logger.debug(self.curr_cycle)
             # Invoke new packets
             self.invoke_packets()
 

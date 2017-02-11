@@ -17,7 +17,7 @@ class Packet(object):
         return rv
 
     def __repr__(self):
-        return '{}_{}'.format(self.policy_name, self.invoke_cycle)
+        return '({}):{}'.format(self.invoke_cycle, self.policy_name)
 
 
 class Node(object):
@@ -29,7 +29,6 @@ class Node(object):
 
         self.curr_total_packets = 0
         self.curr_max_buffer_size = 0
-        self.curr_mean_buffer_size = 0
         self.received_packets = collections.defaultdict(list)
 
     def __repr__(self):
@@ -60,11 +59,9 @@ class Node(object):
         buffers_size = [len(buf) for buf in self.buffers.values()]
         if buffers_size:
             self.curr_max_buffer_size = max(buffers_size)
-            self.curr_mean_buffer_size = sum(buffers_size) / len(buffers_size)
         else:
             self.curr_max_buffer_size = 0
-            self.curr_mean_buffer_size = 0
-        self.services.reporter.update_buffer_size(self.name, self.curr_max_buffer_size, self.curr_mean_buffer_size)
+        self.services.reporter.update_buffer_size(self.name, self.curr_max_buffer_size)
 
     # Send count packets to next node, by default send as much as possible
     def send(self, next_node_name, count=1e10):
