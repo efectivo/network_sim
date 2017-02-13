@@ -25,6 +25,9 @@ class Sim(object):
             node = units.Node(node_name, self, buffer_type)
             self.nodes[node_name] = node
 
+        for node in self.nodes.itervalues():
+            node.set_connected_nodes()
+
         self.algo = algo
         self.algo.init(self)
 
@@ -43,23 +46,29 @@ class Sim(object):
                 node = self.nodes[node_name]
                 node.receive(packet)
 
+    def run_once(self):
+        self.logger.debug(self.curr_cycle)
+        # Invoke new packets
+        self.invoke_packets()
+
+        # Route existing packets
+        self.algo.run()
+
+        # Update units
+        for node in self.nodes.values():
+            node.cycle_end()
+
+        self.curr_cycle += 1
+
+        if self.animate:
+            self.reporter.animate()
+
     def run(self):
-        while self.curr_cycle < self.cycle_number:
-            self.logger.debug(self.curr_cycle)
-            # Invoke new packets
-            self.invoke_packets()
-
-            # Route existing packets
-            self.algo.run()
-
-            # Update units
-            for node in self.nodes.values():
-                node.cycle_end()
-
-            if self.animate:
-                self.reporter.animate()
-
-            self.curr_cycle += 1
-
+        if self.animate:
+            self.run_once()
+            return
+        else:
+            while self.curr_cycle < self.cycle_number:
+                self.run_once()
         self.reporter.finalize()
 

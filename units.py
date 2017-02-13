@@ -31,6 +31,13 @@ class Node(object):
         self.curr_max_buffer_size = 0
         self.received_packets = collections.defaultdict(list)
 
+    def set_connected_nodes(self):
+        self.parents_name = self.services.net.predecessors(self.name)
+        self.parents = [self.services.nodes[x] for x in self.parents_name]
+
+        self.children_name = self.services.net.successors(self.name)
+        self.children = [self.services.nodes[x] for x in self.children_name]
+
     def __repr__(self):
         return str(self.name)
 

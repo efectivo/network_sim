@@ -19,7 +19,7 @@ class Reporter(object):
 
         # For animation
         self.fig = None
-        self.new_packets = collections.defaultdict(int)
+        self.new_packets = set()
 
         self.calc_history = calc_history
         if calc_history:
@@ -40,7 +40,7 @@ class Reporter(object):
         self.total_packets_sent += len(packets)
         if self.services.verbose:
             for packet in packets:
-                self.new_packets[packet.route[0]] += 1
+                self.new_packets.add(packet.route[0])
                 self.invoke_logger.debug(packet)
 
     def packet_received_fast(self, packet):
@@ -53,7 +53,6 @@ class Reporter(object):
     def packet_received_history(self, packet):
         self.total_packets_recv += 1
         self.packet_delay[str(packet)] = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
-        #if self.services.verbose:
         self.receive_logger.debug(packet)
 
     def update_buffer_size_fast(self, name, curr_max_buffer_size):
@@ -103,10 +102,15 @@ class Reporter(object):
 
         plt.show()
 
+    # Run the next loop on mouse press event
+    def __call__(self, event):
+        self.services.run_once()
+
     def animate(self):
         if not self.fig:
             self.fig = plt.figure()
             self.pos = nx.spring_layout(self.services.net)
+            self.cid = self.fig.canvas.mpl_connect('button_press_event', self)
             # pos = nx.spectral_layout(g)
 
         self.fig.clear()
@@ -114,13 +118,12 @@ class Reporter(object):
         node_color = []
         for node_name, node in self.services.nodes.iteritems():
             labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
-            node_color.append('r' if self.new_packets[node_name] else 'g')
+            node_color.append('r' if node_name in self.new_packets else 'g')
 
         nx.draw_networkx(self.services.net, self.pos, labels=labels,
                          node_size=1600, node_color=node_color,
                          node_shape='s', font_size=15)
 
-        self.fig.show()
         self.fig.suptitle(self.services.curr_cycle, fontsize=20)
-        plt.pause(5)
-        self.new_packets = collections.defaultdict(int)
+        self.new_packets = set()
+        plt.pause(60)
