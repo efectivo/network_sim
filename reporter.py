@@ -5,92 +5,135 @@ import logging
 import networkx as nx
 
 
-class Reporter(object):
-    """
-    This class collect the statistics and aggregate them.
-    Print simulation summary at the end.
-    """
-    def __init__(self, services, calc_history=False):
-        self.services = services
+# This reporter show only high level statistics in order to compare different tests
+class TestResultsSummary(object):
+    def __init__(self):
+        self.debugging = False
+        self.animating = False
+        self.test = None
+
         self.total_packets_sent = 0
         self.total_packets_recv = 0
-        self.invoke_logger = logging.getLogger('invoke')
-        self.receive_logger = logging.getLogger('receive')
+        self.total_delay = 0
+        self.curr_max_buffer_size = 0
+        self.curr_max_packet_delay = 0
 
-        # For animation
-        self.fig = None
-        self.new_packets = set()
+    def init(self, test):
+        self.test = test
+        self.invoke_logger = logging.getLogger('invoke_{}'.format(test.name))
+        self.receive_logger = logging.getLogger('receive_{}'.format(test.name))
+        self.result_logger = logging.getLogger('results_{}'.format(test.name))
 
-        self.calc_history = calc_history
-        if calc_history:
-            self.packet_delay = collections.OrderedDict()
-            self.stats = {}
-            self.df = None
-            self.packet_delay_df = None
-            self.packet_received = self.packet_received_history
-            self.update_buffer_size = self.update_buffer_size_history
-        else:
-            self.total_delay = 0
-            self.curr_max_buffer_size = 0
-            self.curr_max_packet_delay = 0
-            self.packet_received = self.packet_received_fast
-            self.update_buffer_size = self.update_buffer_size_fast
-
+    # Invocation is similar to all reporter
     def packets_invoked(self, packets):
         self.total_packets_sent += len(packets)
-        if self.services.verbose:
+        if self.test.sim.verbose:
             for packet in packets:
-                self.new_packets.add(packet.route[0])
                 self.invoke_logger.debug(packet)
 
-    def packet_received_fast(self, packet):
+    def packet_received(self, packet):
         self.total_packets_recv += 1
-        max_packet_delay = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
+        max_packet_delay = self.test.sim.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
         self.curr_max_packet_delay = max(max_packet_delay, self.curr_max_packet_delay)
         self.total_delay += max_packet_delay
         self.receive_logger.debug(packet)
 
-    def packet_received_history(self, packet):
-        self.total_packets_recv += 1
-        self.packet_delay[str(packet)] = self.services.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
-        self.receive_logger.debug(packet)
-
-    def update_buffer_size_fast(self, name, curr_max_buffer_size):
+    def update_buffer_size(self, name, curr_max_buffer_size):
         self.curr_max_buffer_size = max(self.curr_max_buffer_size, curr_max_buffer_size)
 
-    def update_buffer_size_history(self, name, curr_max_buffer_size):
-        self.stats[(name, self.services.curr_cycle)] = (curr_max_buffer_size,)
+    def finalize(self):
+        self.result_logger.info('Total sent: {}'.format(self.total_packets_sent))
+        self.result_logger.info('Total recv: {}'.format(self.total_packets_recv))
+        self.result_logger.info('Max packet delay: {}'.format(self.curr_max_packet_delay))
+        if self.total_packets_recv > 0:
+            self.result_logger.info('Average packet delay: {}'.format(1.0*self.total_delay/self.total_packets_recv))
+        self.result_logger.info('Max buffer size: {}'.format(self.curr_max_buffer_size))
+
+    def cycle_end(self):
+        pass
+
+
+class TestResultsAnimation(TestResultsSummary):
+    def __init__(self):
+        TestResultsSummary.__init__(self)
+        self.debugging = True
+        self.animating = True
+        self.fig = None
+        self.new_packets = set()
+
+    def cycle_end(self):
+        self._animate()
+        self.new_packets = set()
+
+    def packets_invoked(self, packets):
+        self.total_packets_sent += len(packets)
+        if self.test.sim.verbose:
+            for packet in packets:
+                self.new_packets.add(packet.route[0])
+                self.invoke_logger.debug(packet)
+
+    def _animate(self):
+        sim = self.test.sim
+        if not self.fig:
+            self.fig = plt.figure()
+            self.pos = nx.spring_layout(sim.net)
+
+        self.fig.clear()
+        labels = {}
+        node_color = []
+        for node_name, node in self.test.nodes.iteritems():
+            labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
+            node_color.append('r' if node_name in self.new_packets else 'g')
+
+        nx.draw_networkx(sim.net, self.pos, labels=labels,
+                         node_size=1600, node_color=node_color,
+                         node_shape='s', font_size=15)
+
+        self.fig.suptitle(sim.curr_cycle, fontsize=20)
+        self.new_packets = set()
+        self.fig.canvas.draw()
+
+        plt.waitforbuttonpress(timeout=-1)
+
+
+class TestResultsHistory(TestResultsSummary):
+    def __init__(self, plot_buffer_state=False):
+        TestResultsSummary.__init__(self)
+        self.debugging = True
+
+        self.packet_delay = collections.OrderedDict()
+        self.stats = {}
+        self.df = None
+        self.packet_delay_df = None
+        self.plot_buffer_state = plot_buffer_state
+
+    def packet_received(self, packet):
+        self.total_packets_recv += 1
+        self.packet_delay[str(packet)] = self.test.sim.curr_cycle - packet.invoke_cycle - (len(packet.route)-1)
+        self.receive_logger.debug(packet)
+
+    def update_buffer_size(self, name, curr_max_buffer_size):
+        self.stats[(name, self.test.sim.curr_cycle)] = (curr_max_buffer_size,)
 
     def finalize(self):
-        if self.calc_history:
-            df = pd.DataFrame(self.stats).T
-            df.columns = ['BUF'] # Relevant only when there is more than one port
-            df.index.names = ['NODE', 'CYCLE']
-            self.df = df.reset_index()
-            self.packet_delay_df = pd.Series(self.packet_delay.values())
+        TestResultsSummary.finalize(self)
+        df = pd.DataFrame(self.stats).T
+        df.columns = ['BUF'] # Relevant only when there is more than one port
+        df.index.names = ['NODE', 'CYCLE']
+        self.df = df.reset_index()
+        self.packet_delay_df = pd.Series(self.packet_delay.values())
 
-    def print_stats(self):
-        self.services.logger.info('Total sent: {}'.format(self.total_packets_sent))
-        self.services.logger.info('Total recv: {}'.format(self.total_packets_recv))
+        self._plot_graphs()
+        if self.plot_buffer_state:
+            self._plot_buffer_state()
 
-        if not self.calc_history:
-            self.services.logger.info('Max packet delay: {}'.format(self.curr_max_packet_delay))
-            if self.total_packets_recv > 0:
-                self.services.logger.info('Average packet delay: {}'.format(1.0*self.total_delay/self.total_packets_recv))
-            self.services.logger.info('Max buffer size: {}'.format(self.curr_max_buffer_size))
-
-    def plot_graphs(self):
-        if not self.calc_history:
-            return
-
+    def _plot_graphs(self):
         df = self.df.groupby('CYCLE').BUF
         df.agg(['max', 'mean']).plot(title='Buffer statistics per node')
         plt.show()
 
-    def plot_buffer_state(self):
+    def _plot_buffer_state(self):
         from mpl_toolkits.mplot3d import Axes3D
-        if not self.calc_history:
-            return
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -102,28 +145,3 @@ class Reporter(object):
 
         plt.show()
 
-    # Run the next loop on mouse press event
-    def __call__(self, event):
-        self.services.run_once()
-
-    def animate(self):
-        if not self.fig:
-            self.fig = plt.figure()
-            self.pos = nx.spring_layout(self.services.net)
-            self.cid = self.fig.canvas.mpl_connect('button_press_event', self)
-            # pos = nx.spectral_layout(g)
-
-        self.fig.clear()
-        labels = {}
-        node_color = []
-        for node_name, node in self.services.nodes.iteritems():
-            labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
-            node_color.append('r' if node_name in self.new_packets else 'g')
-
-        nx.draw_networkx(self.services.net, self.pos, labels=labels,
-                         node_size=1600, node_color=node_color,
-                         node_shape='s', font_size=15)
-
-        self.fig.suptitle(self.services.curr_cycle, fontsize=20)
-        self.new_packets = set()
-        plt.pause(60)

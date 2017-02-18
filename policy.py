@@ -8,7 +8,7 @@ class Policy(object):
         self.net = net
 
     def invoke(self, curr_cycle):
-        pass
+        assert False
 
     # Assert that the injection policy is valid
     def update_load(self, p, packets_per_cycle):
@@ -73,7 +73,7 @@ class OnOff(Policy):
     # In OFF state, with p_on switch to ON
     def invoke_off(self, curr_cycle):
         if random.random() > self.p_on:
-            return None
+            return []
         self.invoke = self.invoke_on
         return self.invoke_packets(curr_cycle)
 

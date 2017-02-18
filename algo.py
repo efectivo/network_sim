@@ -53,3 +53,24 @@ class DownHill(Algo):
         if curr_max > next_node_buf_len or self.use_odd_even and curr_max == next_node_buf_len and (curr_max % 2) == 1:
             self.to_send[max_parent, node.name] = curr_max
 
+
+# This is an extension to any DAG
+class GeneralizedDownHill(Algo):
+    def __init__(self, use_odd_even):
+        self.use_odd_even = use_odd_even
+
+    def run_node(self, node):
+        out_degree = len(node.children)
+        bufs = [len(parent.buffers[node.name]) for parent in node.parents]
+        bufs_sorted = sorted(zip(bufs, range(len(bufs))), reverse=True)
+        selected_bufs = bufs_sorted[:out_degree]
+        for buf in selected_bufs:
+            parent_buf_len = buf[0]
+            parent_index = buf[1]
+            parent = node.parents[parent_index]
+
+            next_node_buf_len = node.curr_total_packets
+            # Forward the packets odd even downhill
+            odd_even_conf = self.use_odd_even and parent_buf_len == next_node_buf_len and (parent_buf_len % 2) == 1
+            if parent_buf_len > next_node_buf_len or odd_even_conf:
+                self.to_send[parent, node.name] = parent_buf_len
