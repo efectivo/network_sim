@@ -82,7 +82,12 @@ class TestResultsAnimation(TestResultsSummary):
         labels = {}
         node_color = []
         for node_name, node in self.test.nodes.iteritems():
-            labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
+            #labels[node_name] = '({}):{}'.format(node_name, node.curr_total_packets)
+            tmp = []
+            for k, buf in node.buffers.items():
+                for packet in buf.values:
+                    tmp.append('{}_{}'.format(packet[1].packet_id, '-'.join(map(str, packet[1].route))))
+            labels[node_name] = '({}):{}'.format(node_name, ','.join(tmp))
             node_color.append('r' if node_name in self.new_packets else 'g')
 
         nx.draw_networkx(sim.net, self.pos, labels=labels,

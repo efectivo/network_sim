@@ -1,13 +1,15 @@
 import collections
 import logging
 
-
 class Packet(object):
+    next_packet_id = 0
     def __init__(self, policy_name, route, curr_cycle):
         self.policy_name = policy_name
         self.route = route
         self.invoke_cycle = curr_cycle
         self.curr_hop = 0
+        self.packet_id = Packet.next_packet_id
+        Packet.next_packet_id += 1
 
     def get_next_hop(self):
         if self.curr_hop == len(self.route):
@@ -17,7 +19,7 @@ class Packet(object):
         return rv
 
     def __repr__(self):
-        return '({}):{}'.format(self.invoke_cycle, self.policy_name)
+        return '({},{}):{}'.format(self.packet_id, self.invoke_cycle, self.route)
 
 
 class Node(object):

@@ -60,12 +60,17 @@ class GeneralizedDownHill(Algo):
         self.use_odd_even = use_odd_even
 
     def run_node(self, node):
+        # TODO How to deal with packet to the current node and node to his children
         out_degree = len(node.children)
         bufs = [len(parent.buffers[node.name]) for parent in node.parents]
         bufs_sorted = sorted(zip(bufs, range(len(bufs))), reverse=True)
-        selected_bufs = bufs_sorted[:out_degree]
-        for buf in selected_bufs:
+        # TODO choose randomly
+        if out_degree > 0:
+            bufs_sorted = bufs_sorted[:out_degree]
+        for buf in bufs_sorted:
             parent_buf_len = buf[0]
+            if not parent_buf_len:
+                return
             parent_index = buf[1]
             parent = node.parents[parent_index]
 
@@ -74,3 +79,5 @@ class GeneralizedDownHill(Algo):
             odd_even_conf = self.use_odd_even and parent_buf_len == next_node_buf_len and (parent_buf_len % 2) == 1
             if parent_buf_len > next_node_buf_len or odd_even_conf:
                 self.to_send[parent, node.name] = parent_buf_len
+            #else:
+            #    print node.name, parent, parent_buf_len, next_node_buf_len
