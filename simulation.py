@@ -15,14 +15,14 @@ class SimulationConfig:
 
 # Test object, hold the state of a specific test (buffers and algorithm)
 class Test(object):
-    def __init__(self, name, algo, buffer_type, result_type=None):
+    def __init__(self, name, algo, buffer_type, rep=None):
         self.name = name
         self.algo = algo
         self.buffer_type = buffer_type
         self.nodes = {}
-        if result_type is None:
-            result_type = reporter.TestResultsSummary()
-        self.reporter = result_type
+        if rep is None:
+            rep = reporter.TestResultsSummary()
+        self.reporter = rep
         self.reporter.init(self)
         self.sim = None
         self.net = None
@@ -49,6 +49,11 @@ class Test(object):
             node_name = packet.get_next_hop()
             node = self.nodes[node_name]
             node.receive(packet)
+
+#            self.reporter.packet_delivery.append(
+#                (-1, node_name, packet.packet_id,
+#                 self.sim.curr_cycle))
+
 
         self.algo.run()
 

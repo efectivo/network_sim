@@ -71,6 +71,7 @@ class Node(object):
         else:
             self.curr_max_buffer_size = 0
         self.services.reporter.update_buffer_size(self.name, self.curr_max_buffer_size)
+        #self.services.reporter.update_buffer(self.name, self.buffers)
 
     # Send count packets to next node, by default send as much as possible
     def send(self, next_node_name, count=1e10):
@@ -80,6 +81,9 @@ class Node(object):
         count = min(cap, len(buf), count)
         for i in xrange(count):
             packet = buf.extract()
+#            self.services.reporter.packet_delivery.append(
+#                (self.name, next_node_name, packet.packet_id,
+#                 self.services.sim.curr_cycle))
             self.curr_total_packets -= 1
             next_node = self.services.nodes[next_node_name]
             next_node.receive(packet)

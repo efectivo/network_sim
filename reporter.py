@@ -108,9 +108,12 @@ class TestResultsHistory(TestResultsSummary):
 
         self.packet_delay = collections.OrderedDict()
         self.stats = {}
+        self.buffer_stats = {}
         self.df = None
         self.packet_delay_df = None
         self.plot_buffer_state = plot_buffer_state
+
+        self.packet_delivery = []
 
     def packet_received(self, packet):
         self.total_packets_recv += 1
@@ -119,6 +122,15 @@ class TestResultsHistory(TestResultsSummary):
 
     def update_buffer_size(self, name, curr_max_buffer_size):
         self.stats[(name, self.test.sim.curr_cycle)] = (curr_max_buffer_size,)
+
+    def update_buffer(self, name, buffers):
+        out = []
+        for k, v in buffers.iteritems():
+            if v.values:
+                print k, v.values[0][1], str(v.values[0][1])
+            out.append('{}@{}'.format(k, ':'.join(v.values)))
+        print out
+        self.buffer_stats[(name, self.test.sim.curr_cycle)] = '*'.join(out)
 
     def finalize(self):
         TestResultsSummary.finalize(self)
@@ -131,6 +143,9 @@ class TestResultsHistory(TestResultsSummary):
         self._plot_graphs()
         if self.plot_buffer_state:
             self._plot_buffer_state()
+
+        delivery_df = pd.DataFrame(self.packet_delivery, columns=['from', 'to', 'pid', 'cycle'])
+        delivery_df.to_csv(r'E:\TOAR2\Network\notebooks\results_tmp.csv')
 
     def _plot_graphs(self):
         df = self.df.groupby('CYCLE').BUF

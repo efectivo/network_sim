@@ -1,4 +1,4 @@
-import random
+import random, sys, operator
 
 class Algo(object):
     def init(self, services):
@@ -60,24 +60,33 @@ class GeneralizedDownHill(Algo):
         self.use_odd_even = use_odd_even
 
     def run_node(self, node):
-        # TODO How to deal with packet to the current node and node to his children
         out_degree = len(node.children)
+        if out_degree == 0:
+            out_degree = sys.maxint
+
+        # Sort parent's buffers by size, shuffle them first for randomization
         bufs = [len(parent.buffers[node.name]) for parent in node.parents]
-        bufs_sorted = sorted(zip(bufs, range(len(bufs))), reverse=True)
-        # TODO choose randomly
-        if out_degree > 0:
-            bufs_sorted = bufs_sorted[:out_degree]
-        for buf in bufs_sorted:
-            parent_buf_len = buf[0]
+        bufs = zip(bufs, range(len(bufs)))
+        random.shuffle(bufs)
+        bufs_sorted = sorted(bufs, key=operator.itemgetter(0), reverse=True)
+        bufs_sorted = bufs_sorted[:out_degree]
+
+        for parent_buf_len, parent_index in bufs_sorted:
             if not parent_buf_len:
                 return
-            parent_index = buf[1]
             parent = node.parents[parent_index]
 
+            #next_node_buf_len = node.curr_total_packets / float(out_degree)
             next_node_buf_len = node.curr_total_packets
+            if next_node_buf_len > 0:
+                num_of_non_empty_buffers = len([buf for buf in node.buffers.itervalues() if len(buf.values) > 0])
+                next_node_buf_len /= float(num_of_non_empty_buffers)
+
             # Forward the packets odd even downhill
-            odd_even_conf = self.use_odd_even and parent_buf_len == next_node_buf_len and (parent_buf_len % 2) == 1
+            odd_even_conf = self.use_odd_even and \
+                parent_buf_len == int(next_node_buf_len) and (parent_buf_len % 2) == 1
             if parent_buf_len > next_node_buf_len or odd_even_conf:
                 self.to_send[parent, node.name] = parent_buf_len
             #else:
-            #    print node.name, parent, parent_buf_len, next_node_buf_len
+                # TODO print more stuff and debug
+                # print node.name, parent, parent_buf_len, next_node_buf_len, self.services.sim.curr_cycle
