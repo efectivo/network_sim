@@ -22,7 +22,7 @@ class LineConfig(simulation.SimulationConfig):
 
 test1 = simulation.Test('greedy', algo.Greedy(), buffer.LongestInSystem)
 test2 = simulation.Test('odd_even', algo.GeneralizedDownHill(use_odd_even=True), buffer.LongestInSystem)
-test3 = simulation.Test('down_hill', algo.GeneralizedDownHill(use_odd_even=False), buffer.LongestInSystem)
+test3 = simulation.Test('dagdoe', algo.Dagdoe(), buffer.LongestInSystem, use_pseudo_buffers=True)
 tests = [test1, test2, test3]
 s = simulation.Sim(LineConfig(100, 1000,log_level=logging.INFO), tests)
 s.run()

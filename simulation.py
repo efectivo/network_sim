@@ -15,10 +15,11 @@ class SimulationConfig:
 
 # Test object, hold the state of a specific test (buffers and algorithm)
 class Test(object):
-    def __init__(self, name, algo, buffer_type, rep=None):
+    def __init__(self, name, algo, buffer_type, use_pseudo_buffers=False, rep=None):
         self.name = name
         self.algo = algo
         self.buffer_type = buffer_type
+        self.use_pseudo_buffers = use_pseudo_buffers
         self.nodes = {}
         if rep is None:
             rep = reporter.TestResultsSummary()
@@ -33,7 +34,10 @@ class Test(object):
         self.net = sim.net
 
         for node_name in self.net.nodes():
-            node = units.Node(node_name, self, self.buffer_type)
+            if self.use_pseudo_buffers:
+                node = units.NodeWithPseudoBuffers(node_name, self, self.buffer_type)
+            else:
+                node = units.Node(node_name, self, self.buffer_type)
             self.nodes[node_name] = node
 
         for node in self.nodes.itervalues():
@@ -95,16 +99,30 @@ class Sim(object):
         return packets
 
     def run(self):
-        while self.curr_cycle < self.cycle_number:
+        finished_tests = set()
+        sent_packets = 0
+
+        ongoing = True
+        while len(finished_tests) < len(self.tests):
+            if self.curr_cycle == self.cycle_number:
+                print 'Stop invoking packets'
+                ongoing = False
             self.logger.debug(self.curr_cycle)
 
             # Invoke new packets
-            packets = self.invoke_packets()
+            packets = []
+            if ongoing:
+                packets += self.invoke_packets()
+                sent_packets += len(packets)
 
             # Route existing packets per test
             for test in self.tests:
                 packets_copy = copy.deepcopy(packets)
                 test.run(packets_copy)
+                if not ongoing and test.reporter.total_packets_recv == sent_packets:
+                    if test not in finished_tests:
+                        finished_tests.add(test)
+                        print 'Test finished: ', test.name
 
             self.curr_cycle += 1
 

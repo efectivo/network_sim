@@ -48,17 +48,21 @@ class DiamondConfig(simulation.SimulationConfig):
         p2 = units.Packet('diamond', route2[start2:], curr_cycle)
         return [p1, p2]
 
-# net = DiamondConfig(3, 1).net
+
+test1 = simulation.Test('greedy', algo.Greedy(), buffer.LongestInSystem)
+test2 = simulation.Test('odd_even', algo.GeneralizedDownHill(use_odd_even=True), buffer.LongestInSystem)
+test3 = simulation.Test('dagdoe', algo.Dagdoe(), buffer.LongestInSystem, use_pseudo_buffers=True)
+
+tests = [test1, test2, test3]
+config = DiamondConfig(20, .3, 1000)
+#config = DiamondConfig(3, 0, 10, log_level=logging.INFO)
+
+# net = config.net
 # pos = nx.circular_layout(net)
 # nx.draw_networkx(net, pos)
 # import matplotlib.pyplot as plt
 # plt.show()
 
-test1 = simulation.Test('greedy', algo.Greedy(), buffer.LongestInSystem)
-test2 = simulation.Test('odd_even', algo.GeneralizedDownHill(use_odd_even=True), buffer.LongestInSystem)
-test3 = simulation.Test('down_hill', algo.GeneralizedDownHill(use_odd_even=False), buffer.LongestInSystem)
-tests = [test1, test2, test3]
-config = DiamondConfig(20, .3, 1000)
 s = simulation.Sim(config, tests)
 s.run()
 
