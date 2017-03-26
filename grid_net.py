@@ -54,7 +54,7 @@ class GridConfig(simulation.SimulationConfig):
 
 test1 = simulation.Test('greedy', algo.Greedy(), buffer.LongestInSystem)
 test2 = simulation.Test('odd_even', algo.GeneralizedDownHill(use_odd_even=True), buffer.LongestInSystem)
-test3 = simulation.Test('dagdoe', algo.Dagdoe(), buffer.LongestInSystem, use_pseudo_buffers=True)
+test3 = simulation.Test('dagdoe', algo.TwoStepsDownHill(), buffer.LongestInSystem, use_pseudo_buffers=True)
 tests = [test1, test2, test3]
 
 config = GridConfig(10, 10, .5, 1000,log_level=logging.INFO)
@@ -84,18 +84,18 @@ s.run()
 # s = simulation.Sim(config, tests)
 # s.run()
 
-# INFO:results_greedy:Total sent: 9972
-# INFO:results_greedy:Total recv: 9972
-# INFO:results_greedy:Max packet delay: 2095
-# INFO:results_greedy:Average packet delay: 487.973626153
-# INFO:results_greedy:Max buffer size: 760
-# INFO:results_odd_even:Total sent: 9972
-# INFO:results_odd_even:Total recv: 9972
-# INFO:results_odd_even:Max packet delay: 2667
-# INFO:results_odd_even:Average packet delay: 888.05354994
-# INFO:results_odd_even:Max buffer size: 230
-# INFO:results_dagdoe:Total sent: 9972
-# INFO:results_dagdoe:Total recv: 9972
-# INFO:results_dagdoe:Max packet delay: 2097
-# INFO:results_dagdoe:Average packet delay: 538.649819495
-# INFO:results_dagdoe:Max buffer size: 4
+# INFO:results_greedy:Total sent: 10027
+# INFO:results_greedy:Total recv: 10027
+# INFO:results_greedy:Max packet delay: 2146
+# INFO:results_greedy:Average packet delay: 500.252617932
+# INFO:results_greedy:Max buffer size: 748
+# INFO:results_odd_even:Total sent: 10027
+# INFO:results_odd_even:Total recv: 10027
+# INFO:results_odd_even:Max packet delay: 2603
+# INFO:results_odd_even:Average packet delay: 899.059140321
+# INFO:results_odd_even:Max buffer size: 241
+# INFO:results_dagdoe:Total sent: 10027
+# INFO:results_dagdoe:Total recv: 10027
+# INFO:results_dagdoe:Max packet delay: 2835
+# INFO:results_dagdoe:Average packet delay: 922.264086965
+# INFO:results_dagdoe:Max buffer size: 214

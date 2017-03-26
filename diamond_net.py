@@ -51,7 +51,7 @@ class DiamondConfig(simulation.SimulationConfig):
 
 test1 = simulation.Test('greedy', algo.Greedy(), buffer.LongestInSystem)
 test2 = simulation.Test('odd_even', algo.GeneralizedDownHill(use_odd_even=True), buffer.LongestInSystem)
-test3 = simulation.Test('dagdoe', algo.Dagdoe(), buffer.LongestInSystem, use_pseudo_buffers=True)
+test3 = simulation.Test('dagdoe', algo.TwoStepsDownHill(), buffer.LongestInSystem, use_pseudo_buffers=True)
 
 tests = [test1, test2, test3]
 config = DiamondConfig(20, .3, 1000)

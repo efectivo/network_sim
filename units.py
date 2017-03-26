@@ -54,7 +54,7 @@ class Node(object):
             self.edge_capacity_per_child[child_name] = cap_per_child
 
     def __repr__(self):
-        return str(self.name)
+        return 'N' + str(self.name)
 
     def receive(self, packet):
         next_node = packet.get_next_hop()

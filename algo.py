@@ -92,8 +92,8 @@ class GeneralizedDownHill(Algo):
                 # print node.name, parent, parent_buf_len, next_node_buf_len, self.services.sim.curr_cycle
 
 
-# Data Aware Generalizaed Down Hill Odd even
-class Dagdoe(Algo):
+# Two steps odd even down hill
+class TwoStepsDownHill(Algo):
     def __init__(self):
         pass
 
@@ -122,7 +122,7 @@ class Dagdoe(Algo):
         parent_pseudo_buffer_size = []
         for child in node.children:
             # The output size is the sum of the node's pseudo buffers
-            pseudo_buffers = node.buffers[child]
+            pseudo_buffers = node.buffers[child.name]
             pseudo_buffers_size = sum([len(buf) for buf in pseudo_buffers.itervalues()])
             output_buffer_size.append(pseudo_buffers_size)
 
