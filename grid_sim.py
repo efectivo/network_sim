@@ -58,25 +58,24 @@ class GridPattern(patterns.PatternIfc):
 writer = results_to_file.ResultHandler('grid')
 
 log_level = logging.ERROR
-for N in [5, 10, 15, 20, 25, 30]:
+#for N in xrange(3, 26):
+for N in xrange(20, 26):
     rows, cols = N, N
-    #for injection_prob in [.1, .25, .5]:
-    for injection_prob in [.1,]:
+    for injection_prob in [.1, .25, .5]:
+    #for injection_prob in [.1,]:
         print N, injection_prob
         cycle_number = 10000
         pattern = GridPattern(rows, cols, injection_prob)
         net = pattern.net
 
         setup = environment.EnvironmentSetup(net, [pattern], cycle_number=cycle_number, log_level=log_level)
-        test_num = 1
 
-        for _ in range(test_num):
-            test1 = tested_unit.Test('greedy', greedy.GreedyProtocol())
-            test2 = tested_unit.Test('2s_odd_even', next_step_down_hill.TwoStepsDownHill())
-            tests = [test1, test2]
+        test1 = tested_unit.Test('greedy', greedy.GreedyProtocol())
+        test2 = tested_unit.Test('2s_odd_even', next_step_down_hill.TwoStepsDownHill(bypass_prob=.1))
+        tests = [test1, test2]
 
-            env = environment.Environment(setup, tests)
-            env.run()
+        env = environment.Environment(setup, tests)
+        env.run()
 
-            for n, test in enumerate(tests):
-                writer.write('{}x{}'.format(rows, cols), 'Grid_{}'.format(injection_prob), cycle_number, test)
+        for n, test in enumerate(tests):
+            writer.write('{}x{}'.format(rows, cols), 'Grid_{}'.format(injection_prob), cycle_number, test)

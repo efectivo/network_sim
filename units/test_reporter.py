@@ -23,7 +23,7 @@ class TestResultsSummary(object):
         self.max_delay_factor = 0
         self.average_delay_factor = 0
 
-        self.max_buffer_size_hist = []
+        #self.max_buffer_size_hist = []
 
     def is_debugging(self):
         return self.debugging
@@ -62,8 +62,7 @@ class TestResultsSummary(object):
 
     def update_buffer_size(self, name, curr_max_buffer_size):
         self.curr_max_buffer_size = max(self.curr_max_buffer_size, curr_max_buffer_size)
-
-        self.max_buffer_size_hist.append(curr_max_buffer_size)
+        #self.max_buffer_size_hist.append(curr_max_buffer_size)
 
     def finalize(self):
         self.max_packet_delay = self.curr_max_packet_delay
@@ -89,11 +88,25 @@ class TestResultsSummary(object):
 
 
 class TestResultsHistory(TestResultsSummary):
-    def init(self, test):
-        TestResultsSummary.init(self, test)
-        self.max_buffer_size_per_cycle = [0] * (self.test.env.cycle_number * 2)
+    def __init__(self, output_file):
+        TestResultsSummary.__init__(self)
+        self.stats = {}
+        self.output_file = output_file
+        #self.max_buffer_size_per_cycle = [0] * (self.test.env.cycle_number * 2)
 
     def update_buffer_size(self, name, curr_max_buffer_size):
-        TestResultsSummary.update_buffer_size(self, name, curr_max_buffer_size)
         curr_cycle = self.test.env.curr_cycle
-        self.max_buffer_size_per_cycle[curr_cycle] = max(self.max_buffer_size_per_cycle[curr_cycle], curr_max_buffer_size)
+        # if curr_max_buffer_size > self.curr_max_buffer_size:
+        #     print self.test.name, name, self.curr_max_buffer_size, curr_max_buffer_size, curr_cycle
+
+        TestResultsSummary.update_buffer_size(self, name, curr_max_buffer_size)
+
+        self.stats[(name, curr_cycle)] = (curr_max_buffer_size,)
+        #self.max_buffer_size_per_cycle[curr_cycle] = max(self.max_buffer_size_per_cycle[curr_cycle], curr_max_buffer_size)
+
+    def finalize(self):
+        TestResultsSummary.finalize(self)
+        df = pd.DataFrame(self.stats).T
+        df.columns = ['BUF'] # Relevant only when there is more than one port
+        df.index.names = ['NODE', 'CYCLE']
+        df.to_hdf(self.output_file, 'abc')

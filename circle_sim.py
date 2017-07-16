@@ -28,11 +28,11 @@ class CircleRandomSrc(patterns.PatternIfc):
         route = self.routes[src][self.dest]
         return [packet.Packet(self.name, route, curr_cycle)]
 
-cycle_number = 10
-circle_len = 5
+cycle_number = 10000
+circle_len = 10
 net = create_circle(circle_len)
 pattern = CircleRandomSrc(net, circle_len)
-setup = environment.EnvironmentSetup(net, [pattern], cycle_number=cycle_number, log_level=logging.DEBUG)
+setup = environment.EnvironmentSetup(net, [pattern], cycle_number=cycle_number, log_level=logging.INFO)
 
 test1 = tested_unit.Test('greedy', greedy.GreedyProtocol())
 test2 = tested_unit.Test('odd_even', down_hill.DownHillProtocol(True))

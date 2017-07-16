@@ -19,6 +19,9 @@ class BufferComposite(object):
     def __len__(self):
         return sum([len(buf) for buf in self.buffers.values()])
 
+    def __repr__(self):
+        return str(self.__len__())
+
     def get_buf_len(self, buf_name):
         return len(self.buffers[buf_name])
 

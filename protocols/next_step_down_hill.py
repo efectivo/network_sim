@@ -7,7 +7,7 @@ import copy
 import random
 
 class TwoStepsDownHill(forwarding_protocol.ForwardingProtocol):
-    def __init__(self, bypass_prob=0, use_two_stages=True, choose_max_randomaly=True):
+    def __init__(self, bypass_prob=0, use_two_stages=True, choose_max_randomaly=True, divide_by_fanout=False):
         buffer_creator_func = functools.partial(forwarding_buffer_composite.BufferComposite, forwarding_buffer.LongestInSystem)
         forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type=buffer_creator_func)
         self.name = 'two-step'
@@ -23,6 +23,8 @@ class TwoStepsDownHill(forwarding_protocol.ForwardingProtocol):
             self._calc_max_buffer = self._calc_max_buffer_randomaly
         else:
             self._calc_max_buffer = self._calc_max_buffer_lis
+
+        self.divide_by_fanout = divide_by_fanout
 
 
     def init(self):
@@ -89,6 +91,10 @@ class TwoStepsDownHill(forwarding_protocol.ForwardingProtocol):
 
             # Run odd even down hill
             output_size = output_buffer_size[child]
+
+            if self.divide_by_fanout:
+                output_size /= len(node.children)
+
             if self.check_odd_even_rule(buf_size, output_size):
                 if child is not None:
                     self.to_send[parent, node, child.name] += 1

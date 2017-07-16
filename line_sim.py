@@ -15,15 +15,14 @@ def create_directed_line(N):
         net.add_edge(i + 1, i)
     return net
 
-#for N in [10, 50, 100, 200, 500, 1000]:
-for N in [100,]:
-    cycle_number = N**2
-    test_num = 100
-
+for N in range(10, 510, 10):
+    cycle_number = 50000
+    test_num = 1
     net = create_directed_line(N)
     pattern = patterns.RandomSrcSameDest(net, range(1, N), 0)
     setup = environment.EnvironmentSetup(net, [pattern], cycle_number=cycle_number, log_level=logging.ERROR)
 
+    print N
     for _ in range(test_num):
         print _
         if N <= 100:
@@ -41,11 +40,3 @@ for N in [100,]:
 
         for n, test in enumerate(tests):
             writer.write('{}'.format(N), 'RSSD_1_0', cycle_number, test)
-
-# import pickle
-# with open(r'E:\TOAR2\Network\Latex\results\line.pickle', 'wb') as f:
-#     pickle.dump(res, f)
-# markers = 'x.ov'
-# for n in xrange(test_types_num):
-#     plt.scatter(*zip(*res[n]), marker=markers[n])
-# plt.show()
