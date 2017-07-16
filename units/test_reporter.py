@@ -109,4 +109,7 @@ class TestResultsHistory(TestResultsSummary):
         df = pd.DataFrame(self.stats).T
         df.columns = ['BUF'] # Relevant only when there is more than one port
         df.index.names = ['NODE', 'CYCLE']
-        df.to_hdf(self.output_file, 'abc')
+        if self.output_file.endswith('.csv'):
+            df.to_csv(self.output_file)
+        else:
+            df.to_hdf(self.output_file, 'abc')
