@@ -4,7 +4,6 @@ import forwarding_buffer
 class GreedyProtocol(forwarding_protocol.ForwardingProtocol):
     def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
         forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type)
-        self.name = 'greedy'
 
     def run_communication_step(self):
         self.to_send = {}

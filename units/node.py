@@ -2,20 +2,22 @@ import collections
 import logging
 
 class Node(object):
-    def __init__(self, name, nodes, reporter, buffer_type):
+    def __init__(self, name, reporter, buffer_type):
         self.name = name
         self.reporter = reporter
-        self.nodes = nodes
         self.buffer_type = buffer_type
-        self.buffers = {}
-        self.node_logger = logging.getLogger('{}_node_{}'.format(self.reporter.test.name, name))
 
+        self.buffers = {}
+        self.nodes = None
+
+        self.node_logger = logging.getLogger('{}_node_{}'.format(self.reporter.test.name, name))
         self.curr_total_packets = 0
         self.curr_max_buffer_size = 0
         self.received_packets = collections.defaultdict(list)
 
     # Cache relevant attributes
     def update_topology(self, network, nodes):
+        self.nodes = nodes
         self.parents_name = network.predecessors(self.name)
         self.parents = [nodes[x] for x in self.parents_name]
 

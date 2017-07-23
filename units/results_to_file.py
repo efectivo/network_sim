@@ -14,7 +14,7 @@ class ResultHandler(object):
         self.output_file.close()
 
     def write(self, net, pattern, cycle_number, test):
-        self.output_file.write('{},{},{},{},{},'.format(net, pattern, cycle_number, test.forwarding_protcol.name,
+        self.output_file.write('{},{},{},{},{},'.format(net, pattern, cycle_number, test.name,
                                                        test.forwarding_protcol.buffer_type().name))
         rep = test.reporter
         self.output_file.write('{},{},{},{},{}\n'.format(rep.max_buffer_size, rep.average_packet_delay,

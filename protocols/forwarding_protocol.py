@@ -15,7 +15,7 @@ class ForwardingProtocol(object):
 
     # Factory method can be override
     def create_node(self, node_name):
-        return node.Node(node_name, self.nodes, self.test.reporter, self.buffer_type)
+        return node.Node(node_name, self.test.reporter, self.buffer_type)
 
     def run_communication_step(self):
         pass

@@ -6,7 +6,6 @@ import numpy as np
 class DownHillProtocol(forwarding_protocol.ForwardingProtocol):
     def __init__(self, use_odd_even, buffer_type=forwarding_buffer.LongestInSystem):
         self.use_odd_even = use_odd_even
-        self.name = 'odd-even' if use_odd_even else 'downhill'
         forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type)
 
     def run_communication_step(self):

@@ -10,7 +10,6 @@ class TwoStepsDownHill(forwarding_protocol.ForwardingProtocol):
     def __init__(self, bypass_prob=0, use_two_stages=True, choose_max_randomaly=True, divide_by_fanout=False):
         buffer_creator_func = functools.partial(forwarding_buffer_composite.BufferComposite, forwarding_buffer.LongestInSystem)
         forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type=buffer_creator_func)
-        self.name = 'two-step'
 
         self.bypass_prob = bypass_prob
         if bypass_prob > 0:
@@ -93,7 +92,9 @@ class TwoStepsDownHill(forwarding_protocol.ForwardingProtocol):
             output_size = output_buffer_size[child]
 
             if self.divide_by_fanout:
-                output_size /= len(node.children)
+                output_size /= len(active_children)
+                #output_size /= len(node.children)
+
 
             if self.check_odd_even_rule(buf_size, output_size):
                 if child is not None:
