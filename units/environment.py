@@ -1,5 +1,7 @@
 import logging
 import copy
+import datetime
+import networkx as nx
 
 # General configuration for the simulation, define the common modules
 class EnvironmentSetup:
@@ -11,32 +13,44 @@ class EnvironmentSetup:
 
 class Environment(object):
     def __init__(self, setup, tests):
+        assert len(tests)>0, 'Enter at least one test'
+        assert type(setup.network) == nx.DiGraph, 'Network should be a directed graph'
+        assert len(setup.patterns) > 0, 'Enter at least one injection pattern'
+
         # The common part
         self.network = setup.network
+        # Set default capacity values to 1
+        for n1, n2 in self.network.edges_iter():
+            edge_attr = self.network[n1][n2]
+            if 'cap' not in edge_attr:
+                edge_attr['cap'] = 1
+
         self.patterns = setup.patterns
         self.cycle_number = setup.cycle_number
         logging.basicConfig(level=setup.log_level)
-        self.logger = logging.getLogger('env')
-        self.verbose = setup.log_level == logging.DEBUG
         self.curr_cycle = 0
 
         # Give the tests access to the common parts
+        name_set = set()
         self.tests = tests
-        assert sum([test.reporter.is_debugging() for test in tests]) <= 1
+        assert sum([test.reporter.is_debugging() for test in tests]) <= 1, 'Cannot debug more than one test'
         for test in self.tests:
+            assert test.name not in self.tests, 'Tests name should be unique'
+            name_set.add(test.name)
+
             test.init(self)
 
     def run(self):
+        start = datetime.datetime.now()
+
         finished_tests = set()
         num_sent_packets = 0
         inject_packets = True
-        test_num = len(self.tests)
 
+        test_num = len(self.tests)
         while len(finished_tests) < test_num:
             if self.curr_cycle == self.cycle_number:
                 inject_packets = False
-
-            self.logger.debug(self.curr_cycle)
 
             packets = []
             if inject_packets:
@@ -46,6 +60,7 @@ class Environment(object):
 
             # Now run each protocol independently
             for test in self.tests:
+                test.reporter.start_cycle(self.curr_cycle)
                 test.run_communication_step()
                 test.run_forwarding_step()
                 if len(packets) > 0:
@@ -54,6 +69,7 @@ class Environment(object):
 
                 if not inject_packets and test not in finished_tests:
                     if test.reporter.get_num_recv_packets() == num_sent_packets:
+                        test.reporter.test_finished(datetime.datetime.now() - start)
                         finished_tests.add(test)
 
             self.curr_cycle += 1

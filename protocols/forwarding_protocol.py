@@ -4,18 +4,18 @@ from units import node
 class ForwardingProtocol(object):
     def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
         self.buffer_type = buffer_type
-        self.nodes = None
+        self.test = None
+        self.network = None
 
-    def set_env(self, test):
+    def init(self, test):
         self.test = test
-        self.nodes = test.nodes
+        self.network = self.test.network
 
-    def init(self):
-        pass
+    def create_node(self, node_name, network):
+        return node.Node(node_name, network)
 
-    # Factory method can be override
-    def create_node(self, node_name):
-        return node.Node(node_name, self.test.reporter, self.buffer_type)
+    def create_buffer(self):
+        return self.buffer_type()
 
     def run_communication_step(self):
         pass

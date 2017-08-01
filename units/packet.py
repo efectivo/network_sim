@@ -26,5 +26,9 @@ class Packet(object):
         self.curr_hop += 1
 
     def __repr__(self):
-        return 'PID:{}/{}. {}->{}'.format(self.packet_id, self.invoke_cycle, self.route[0], self.route[-1])
+        if len(self.route) > 10:
+            return '**{}** {}=>{} at {}'.format(self.packet_id, self.route[0], self.route[-1], self.invoke_cycle)
+        return '**{}** {} at t={}'.format(self.packet_id, self.route, self.invoke_cycle)
+
+
 
