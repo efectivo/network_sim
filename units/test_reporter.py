@@ -3,6 +3,7 @@ import pandas as pd
 import collections
 import logging
 import networkx as nx
+import json
 
 
 # This reporter show only high level statistics in order to compare different tests
@@ -116,29 +117,66 @@ class TestResultsLog(TestResultsSummary):
     def __init__(self, output_file):
         TestResultsSummary.__init__(self)
         self.f = open(output_file, 'wt')
+        self.edge_dict = {}
+        self.d = {}
 
     def init(self, test):
         TestResultsSummary.init(self, test)
-        self.f.write('# This is an auto-generated file created by TestResultsLog. don\'t edit manually.\n')
-        self.f.write('{}\n'.format(self.test.name))
-        self.f.write('{}\n'.format(self.network.number_of_edges()))
-        nx.write_edgelist(self.network, self.f)
-        self.f.write('NEW,CYCLE_NUM\n')
-        self.f.write('INV,PACKET_ID,ROUTE\n')
-        self.f.write('FWD,PACKET_ID,SRC,DEST\n')
+
+        self.d = {}
+        self.d['nodes'] = []
+        for n, node in enumerate(self.network.nodes()):
+            node_dict = {}
+            node_dict['id'] = n
+            node_dict['label'] = str(n)
+            self.d['nodes'].append(node_dict)
+
+        n = 0
+        # {'id': 0, 'from': 0, 'to': 0, 'arrows': 'to'},
+        self.d['edges'] = []
+        for src, tmp in self.network.edge.iteritems():
+            for dest, e in tmp.iteritems():
+                edge_dict = {}
+                edge_dict['id'] = n
+                #edge_dict['label'] = str(n)
+                edge_dict['from'] = src
+                edge_dict['to'] = dest
+                edge_dict['arrow'] = 'to'
+                edge_dict['cap'] = e['cap']
+                self.d['edges'].append(edge_dict)
+                self.edge_dict[src, dest] = n
+                n += 1
+
+        self.d['test_name'] = self.test.name
+        self.d['packets'] = {}
+        self.d['cycles'] = []
+
+        # self.f.write('NEW,CYCLE_NUM\n')
+        # self.f.write('INV,PACKET_ID,ROUTE\n')
+        # self.f.write('FWD,PACKET_ID,SRC,DEST\n')
 
     def start_cycle(self, cycle):
         TestResultsSummary.start_cycle(self, cycle)
-        self.f.write('NEW,{}\n'.format(cycle))
+        self.curr_cycle_events = []
+        self.d['cycles'].append(self.curr_cycle_events)
 
     def packet_invoked(self, packet):
         TestResultsSummary.packet_invoked(self, packet)
-        self.f.write('INV,{},{}\n'.format(packet.packet_id, '>'.join(map(str, packet.route))))
+        self.d['packets'][packet.packet_id] = '>'.join(map(str, packet.route))
+        v = packet.packet_id, -1, -1, packet.route[0]
+        self.curr_cycle_events.append(v)
 
     def packet_forwarded(self, dest, src, packet):
         TestResultsSummary.packet_forwarded(self, dest, src, packet)
-        self.f.write('FWD,{},{},{}\n'.format(packet.packet_id, src, dest))
+        v = packet.packet_id, self.edge_dict[src, dest], src, dest
+        self.curr_cycle_events.append(v)
+
+    def packet_received(self, packet):
+        TestResultsSummary.packet_received(self, packet)
+        v = packet.packet_id, -1, packet.route[-1], -1
+        self.curr_cycle_events.append(v)
 
     def finalize(self):
         TestResultsSummary.finalize(self)
+        json.dump(self.d, self.f)
         self.f.close()
