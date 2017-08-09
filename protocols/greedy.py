@@ -2,8 +2,9 @@ import forwarding_protocol
 import forwarding_buffer
 
 class GreedyProtocol(forwarding_protocol.ForwardingProtocol):
-    def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
-        forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type)
+    def __init__(self, scheduling_policy=forwarding_buffer.LongestInSystem):
+        forwarding_protocol.ForwardingProtocol.__init__(self)
+        self.set_scheduling_policy(scheduling_policy)
 
     def run_communication_step(self):
         pass

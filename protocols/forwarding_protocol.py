@@ -2,10 +2,13 @@ import forwarding_buffer
 from units import node
 
 class ForwardingProtocol(object):
-    def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
-        self.buffer_type = buffer_type
+    def __init__(self):
+        self.scheduling_policy = None
         self.test = None
         self.network = None
+
+    def set_scheduling_policy(self, p):
+        self.scheduling_policy = p
 
     def init(self, test):
         self.test = test
@@ -15,7 +18,7 @@ class ForwardingProtocol(object):
         return node.Node(node_name, network)
 
     def create_buffer(self):
-        return self.buffer_type()
+        return self.scheduling_policy()
 
     def run_communication_step(self):
         pass

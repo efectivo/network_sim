@@ -17,10 +17,10 @@ class BufferIfc(object):
 
 
 class Fifo(BufferIfc):
+    name = 'FIFO'
     def __init__(self):
         self.queue = Queue.Queue()
         self.values = self.queue
-        self.name = 'FIFO'
 
     def insert(self, packet):
         self.queue.put(packet)
@@ -33,10 +33,10 @@ class Fifo(BufferIfc):
 
 
 class Lifo(BufferIfc):
+    name = 'LIFO'
     def __init__(self):
         self.stack = []
         self.values = self.stack
-        self.name = 'LIFO'
 
     def insert(self, packet):
         self.stack.append(packet)
@@ -49,10 +49,10 @@ class Lifo(BufferIfc):
 
 
 class LongestInSystem(BufferIfc):
+    name = 'LIS'
     def __init__(self):
         self.heap = []
         self.values = self.heap
-        self.name = 'LIS'
 
     def insert(self, packet):
         heapq.heappush(self.heap, (packet.invoke_cycle, packet))
@@ -69,27 +69,27 @@ class LongestInSystem(BufferIfc):
 
 
 class ShortestInSystem(LongestInSystem):
+    name = 'SIS'
     def __init__(self):
         LongestInSystem.__init__(self)
-        self.name = 'SIS'
 
     def insert(self, packet):
         heapq.heappush(self.heap, (-packet.invoke_cycle, packet))
 
 
 class ClosestToSrc(LongestInSystem):
+    name = 'CTS'
     def __init__(self):
         LongestInSystem.__init__(self)
-        self.name = 'CTS'
 
     def insert(self, packet):
         heapq.heappush(self.heap, (packet.curr_hop, packet))
 
 
 class ClosestToDst(LongestInSystem):
+    name = 'CTD'
     def __init__(self):
         LongestInSystem.__init__(self)
-        self.name = 'CTD'
 
     def insert(self, packet):
         heapq.heappush(self.heap, (len(packet.route) - packet.curr_hop, packet))

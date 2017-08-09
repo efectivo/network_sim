@@ -1,8 +1,7 @@
 class Packet(object):
     next_packet_id = 0
 
-    def __init__(self, pattern_name, route, curr_cycle):
-        self.pattern_name = pattern_name
+    def __init__(self, route, curr_cycle):
         self.route = route
         self.invoke_cycle = curr_cycle
         self.curr_hop = 0

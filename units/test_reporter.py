@@ -23,6 +23,9 @@ class TestResultsSummary(object):
         self.total_route_len = 0
         self.max_delay_factor = 0
         self.average_delay_factor = 0
+        self.total_max_buffer_size = 0
+        self.cycles = 0
+
 
     def is_debugging(self):
         return self.debugging
@@ -30,22 +33,18 @@ class TestResultsSummary(object):
     def init(self, test):
         self.test = test
         self.network = test.network
-        self.logger = logging.getLogger(test.name)
+        self.logger = logging.getLogger('test')
 
     def start_cycle(self, cycle):
         self.curr_cycle = cycle
-        self.logger.debug('NEW_CYCLE: {}'.format(cycle))
 
     def packet_invoked(self, packet):
-        self.logger.debug('PACKET_INVOKED: {}'.format(packet))
         self.total_packets_sent += 1
 
     def packet_forwarded(self, dest, src, packet):
-        self.logger.debug('PACKET_FORWARD: {}=>{}, {}'.format(src, dest, packet))
+        pass
 
     def packet_received(self, packet):
-        self.logger.debug('PACKET_RECEIVED: {}'.format(packet))
-
         self.total_packets_recv += 1
         time_to_delivery = self.curr_cycle - packet.invoke_cycle
         route_length = len(packet.route) - 1
@@ -59,13 +58,15 @@ class TestResultsSummary(object):
         self.curr_max_packet_delay = max(max_packet_delay, self.curr_max_packet_delay)
         self.total_delay += max_packet_delay
 
-    def get_num_recv_packets(self):
-        return self.total_packets_recv
-
     def cycle_end(self):
+        cycle_max_buffer_size = 0
         for n1, n2 in self.network.edges_iter():
             buf_size = len(self.network[n1][n2]['buf'])
-            self.curr_max_buffer_size = max(self.curr_max_buffer_size, buf_size)
+            cycle_max_buffer_size = max(cycle_max_buffer_size, buf_size)
+
+        self.total_max_buffer_size += cycle_max_buffer_size
+        self.cycles += 1
+        self.curr_max_buffer_size = max(self.curr_max_buffer_size, cycle_max_buffer_size)
 
     def test_finished(self, test_time):
         self.test_time = test_time
@@ -73,6 +74,8 @@ class TestResultsSummary(object):
     def finalize(self):
         self.max_packet_delay = self.curr_max_packet_delay
         self.max_buffer_size = self.curr_max_buffer_size
+
+        self.average_max_buffer_size = 1. * self.total_max_buffer_size / self.cycles
 
         self.logger.info('Test have finished. Total seconds: {}'.format(self.test_time.total_seconds()))
         self.logger.info('Total sent: {}'.format(self.total_packets_sent))
@@ -83,8 +86,9 @@ class TestResultsSummary(object):
             self.average_packet_delay = 1. * self.total_delay / self.total_packets_recv
             self.logger.info('Average packet delay: {}'.format(self.average_packet_delay))
 
-        self.logger.info('Max packet delay: {}'.format(self.curr_max_packet_delay))
+        self.logger.info('Max packet delay: {}'.format(self.max_packet_delay))
         self.logger.info('Max buffer size: {}'.format(self.max_buffer_size))
+        self.logger.info('Average max buffer size: {}'.format(self.average_max_buffer_size))
 
         self.average_delay_factor = 1. * self.total_time_to_delivery / self.total_route_len
         self.logger.info('Max delay factor: {}'.format(self.max_delay_factor))
@@ -141,13 +145,12 @@ class TestResultsLog(TestResultsSummary):
                 #edge_dict['label'] = str(n)
                 edge_dict['from'] = src
                 edge_dict['to'] = dest
-                edge_dict['arrow'] = 'to'
                 edge_dict['cap'] = e['cap']
                 self.d['edges'].append(edge_dict)
                 self.edge_dict[src, dest] = n
                 n += 1
 
-        self.d['test_name'] = self.test.name
+        #self.d['test_name'] = self.test.name
         self.d['packets'] = {}
         self.d['cycles'] = []
 
@@ -162,19 +165,20 @@ class TestResultsLog(TestResultsSummary):
 
     def packet_invoked(self, packet):
         TestResultsSummary.packet_invoked(self, packet)
-        self.d['packets'][packet.packet_id] = '>'.join(map(str, packet.route))
-        v = packet.packet_id, -1, -1, packet.route[0]
+        self.d['packets'][packet.packet_id] = {'route':packet.route, 'invoke':packet.invoke_cycle}
+        dest = packet.route[0]
+        v = packet.packet_id, -1, -1, dest, packet.route.index(dest), len(packet.route)
         self.curr_cycle_events.append(v)
 
     def packet_forwarded(self, dest, src, packet):
         TestResultsSummary.packet_forwarded(self, dest, src, packet)
-        v = packet.packet_id, self.edge_dict[src, dest], src, dest
+        v = packet.packet_id, self.edge_dict[src, dest], src, dest, packet.route.index(dest), len(packet.route)
         self.curr_cycle_events.append(v)
 
-    def packet_received(self, packet):
-        TestResultsSummary.packet_received(self, packet)
-        v = packet.packet_id, -1, packet.route[-1], -1
-        self.curr_cycle_events.append(v)
+    # def packet_received(self, packet):
+    #     TestResultsSummary.packet_received(self, packet)
+    #     v = packet.packet_id, -1, packet.route[-1], -1
+    #     self.curr_cycle_events.append(v)
 
     def finalize(self):
         TestResultsSummary.finalize(self)

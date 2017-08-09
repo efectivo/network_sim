@@ -2,9 +2,9 @@ import test_reporter
 import collections
 
 class Test(object):
-    def __init__(self, name, forwarding_protcol, reporter=None):
-        self.name = name
+    def __init__(self, desc, forwarding_protcol, reporter=None):
         self.forwarding_protcol = forwarding_protcol
+        self.desc = desc
 
         if reporter is None:
             reporter = test_reporter.TestResultsSummary()
