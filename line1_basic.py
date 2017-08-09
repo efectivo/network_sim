@@ -21,21 +21,3 @@ for N in range(50, 501, 50):
         writer.write(out)
 
 writer.close()
-
-#
-# def setup_gen(): # Return network with N+1 nodes
-#     #for N in range(50, 501, 50):
-#     for N in [50,]:
-#         setup = environment.EnvironmentSetup(net, line_patterns.Uniform(N), N**2, logging.INFO)
-#         yield setup
-#
-# def protocol_gen():
-#     yield greedy.GreedyProtocol()
-#     yield down_hill.SimpleDownHill(down_hill.Types.Downhill)
-#     yield down_hill.SimpleDownHill(down_hill.Types.WeakDownhill)
-#     yield down_hill.SimpleDownHill(down_hill.Types.OddEvenDownhill)
-#
-# # TODO add sch policy
-# runner.run_test(test_desc, setup_gen,
-#                 protocol_gen,
-#                 [forwarding_buffer.LongestInSystem])
