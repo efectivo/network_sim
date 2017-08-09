@@ -1,0 +1,310 @@
+<html><head>
+  <title>Network | Basic usage</title>
+
+  <script type="text/javascript" src="./dist/vis.js"></script>
+  <link href="./dist/vis-network.min.css" rel="stylesheet" type="text/css">
+
+  <style type="text/css">
+    #mynetwork {
+      width: 1000px;
+      height: 500px;
+      border: 1px solid lightgray;
+    }
+  </style>
+</head>
+<body>
+
+Select a file: <input type="file" id="your-files" multiple>
+Set cycle: <input type="text" id="text_cycle"><input type="button" value="Submit", onclick="handleSubmitCycle()">
+<label><input type='checkbox' onclick='handleClick(this);'>Auto run  </label>
+<label><input type='checkbox' onclick='handleClick2(this);'>Show transitions   </label>
+<!--p id="cycle"><h3></h3></p-->
+<div id="mynetwork"><div class="vis-network" tabindex="900" style="position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;"><canvas width="600" height="400" style="position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;"></canvas></div></div>
+<pre id="eventSpan"></pre>
+
+<script type="text/javascript">
+	keep_going = false;
+	two_steps = false;
+	num_actions = 0;
+	set_cycle = -1;
+	function handleClick(cb) {
+		keep_going = cb.checked;
+	}
+	function handleClick2(cb) {
+		two_steps = cb.checked;
+	}
+	function handleSubmitCycle() {
+		set_cycle = parseInt(document.getElementById('text_cycle').value);
+	}
+
+	// Read json
+	var control = document.getElementById("your-files");
+	control.addEventListener("change", function(event) {
+		// When the control has changed, there are new files
+		var reader = new FileReader();
+		reader.onload = function(event) {
+			var contents = event.target.result;
+			var obj = JSON.parse(contents);
+			createNet(obj);
+		};
+
+		reader.onerror = function(event) {
+			console.error("File could not be read! Code " + event.target.error.code);
+		};	
+		reader.readAsText(control.files[0]);
+	}, false);
+	
+	function handleSelection(params) {
+		if (params.nodes.length == 1) {
+			document.getElementById('eventSpan').innerHTML = '<h2>' + createStrForId(params.nodes[0], 'node_long') + '</h2>';
+		}
+		else if (params.edges.length == 1) {
+			document.getElementById('eventSpan').innerHTML = '<h2>' + createStrForId(params.edges[0], 'edge_long') + '</h2>';
+		}			
+	}
+
+    function updateNet(from_node, to_node, edge_id, packet_id, node_index, route_len) {
+		final_node = node_index == route_len - 1;
+		if (state.dir < 0) {
+			var tmp = to_node; 
+			to_node = from_node;
+			from_node = tmp;
+			final_node = node_index == 0;
+		}
+		//console.log(from_node, to_node, edge_id, packet_id, final_node, node_index, route_len, state);
+		if (state.node_to_edge) {
+			if (from_node >= 0) {
+				node_data[from_node].delete(packet_id);
+			}
+			if (edge_id >= 0) {
+				edge_data[edge_id].add(packet_id);
+			}
+		}
+		else {
+			if (edge_id >= 0) {
+				edge_data[edge_id].delete(packet_id);
+			}
+			if (to_node >= 0 && !final_node) {
+				node_data[to_node].add(packet_id)
+			}
+			if (from_node < 0) {
+				new_packets.add(packet_id);
+			}
+		}
+    }
+
+	state = {
+		internal_cycle: 0,
+		cycle: 0, // Defines which actions to do
+		node_to_edge: false, // Defines the input - Nodes or Edges
+		dir: 1, // The direction of action
+	};
+	new_packets = undefined
+
+	function updateNodeLabels() {
+		for (i = 0; i < nodes.length; i++) {
+			var s = node_data[i];
+			var ll = createStrForId(i, 'node_size');
+			var has_new_packet = checkNewPacket(i);
+			nodes.update({
+				id: i,
+				label: ll,
+				value: s.size+1,
+				//color: has_new_packet ? 'red':'blue'
+			});		
+		}
+
+		for (i = 0; i < edges.length; i++) {
+			var s = edge_data[i];
+			var ll = "";
+			if (state.node_to_edge) {
+				ll = createStrForId(i, 'edge_size');
+			}
+			edges.update({
+				id: i,
+				label: ll,
+				arrows: 'to',
+			});		
+		}
+
+		//document.getElementById('text_cycle').innerHTML = '<h2>Cycle:</h2>' + state.cycle + "/" + num_actions.toString();
+		document.getElementById('text_cycle').value = state.cycle + "/" + num_actions.toString();
+		handleSelection(network.getSelection());
+	}
+
+	function createStrForId(i, type) {
+		if (type == 'id') {
+			return i.toString();
+		}
+		if (type == 'edge_size') {
+			var s = edge_data[i];
+			if (s.size == 0) 
+				return "";
+			return s.size.toString();
+		}
+		if (type == 'node_size') {
+			var s = node_data[i];
+			return s.size.toString();
+		}
+		if (type == 'node_long' || type == 'edge_long') {
+			var s = type == 'node_long' ? node_data[i] : edge_data[i];
+			var l = []; 
+			for (let packet_id of s) {
+				var packet_data = packets[packet_id];
+				var packet_str = "".concat(packet_id.toString(), "(", packet_data['route'].join('>'), ")");
+				l.push(packet_str);
+			}
+			return "".concat(i.toString(), "\n", l.join('\n'));
+		}
+	}
+	
+	function checkNewPacket(i) {
+		var s = node_data[i];
+		for (let packet_id of s) {
+			if (new_packets.has(packet_id))
+				return true;
+		}
+		return false;	
+	}
+			
+	function createNet(my_data) {
+		// create an array with nodes
+		nodes = new vis.DataSet(my_data['nodes'])
+		node_data = {}
+		edge_data = {}
+		
+		for (i = 0; i < nodes.length; i++) {
+			nodes.update({
+				id: i,
+				//shape: 'box',
+			});		
+			node_data[i] = new Set();
+		}
+
+		// create an array with edges
+		edges = new vis.DataSet(my_data['edges']);
+		for (i = 0; i < edges.length; i++) {
+			edge_data[i] = new Set();
+			//edges.update({
+			//	id: i,
+			//	value: edges.get()[i]['cap'],
+			//});
+		}
+		
+		// create a network
+		var container = document.getElementById('mynetwork');
+		var data = {
+			nodes: nodes,
+			edges: edges
+		};
+		var options = {
+			nodes: {
+					//shape: 'dot',
+					shape: 'circle',
+					//scaling: {
+						//label: {min:20, max:50},
+						//customScalingFunction: function (min,max,total,value) {
+						//	return value/total;
+						//}, 
+						//min:10, max:100}
+					//}
+				scaling: {
+					label: {min:20, max:50},
+					max: 30,
+				  customScalingFunction: function (min,max,total,value) {
+				  return value/4;
+				  }
+				},
+			}
+		};
+
+		network = new vis.Network(container, data, options);
+		updateNodeLabels();
+
+		actions = my_data['cycles'];
+		num_actions = actions.length
+		packets = my_data['packets'];
+		
+		function runCycle() {
+			if (state.cycle >= actions.length || state.cycle < 0) {
+				return;
+			}
+
+			var curr_actions = actions[state.cycle];
+			for (i = 0; i < curr_actions.length; i++) { 
+				var action = curr_actions[i];
+				var packet_id = action[0];
+				var edge_id = action[1];
+				var from_node = action[2];
+				var to_node = action[3];
+				var node_index = action[4]
+				var route_len = action[5]
+				updateNet(from_node, to_node, edge_id, packet_id, node_index, route_len);
+			}
+			
+			if (set_cycle == -1)
+				updateNodeLabels();			
+		}
+		
+		function runOnce(run_forward) {
+			if (run_forward) {
+				if (state.dir > 0)
+					state.internal_cycle += 0.5;
+				state.dir = 1;
+				state.node_to_edge = Math.round(state.internal_cycle * 2) % 2 == 0;
+			}
+			else {
+				if (state.dir < 0)
+					state.internal_cycle -= 0.5;
+				state.dir = -1;
+				state.node_to_edge = Math.round(state.internal_cycle * 2) % 2 == 1;
+			}
+			state.cycle = Math.floor(state.internal_cycle);
+			runCycle();
+		}
+		
+		function runStep(run_forward) {
+			new_packets = new Set();
+			runOnce(run_forward);
+			if (!two_steps && state.node_to_edge) {
+				runOnce(run_forward);
+			}
+		}
+
+		document.onkeydown = checkKey;
+		function checkKey(e) {
+
+			e = e || window.event;
+
+			if (e.keyCode == '38') {
+				// Space arrow
+				runStep(true);
+			}
+			else if (e.keyCode == '40') {
+			   // Backspace arrow
+			   runStep(false);
+			}
+		}
+		
+		network.on("select", handleSelection);
+		
+		window.setInterval(function(){
+			if (set_cycle != -1) {
+				dir = set_cycle > state.cycle;
+				while (state.cycle != set_cycle) {
+					runStep(dir);
+				}
+				set_cycle = -1;
+				updateNodeLabels();	
+			}
+			if (keep_going) {
+				runStep(true);
+			}
+		}, 500);
+	}
+</script>
+
+
+
+
+</body></html>
