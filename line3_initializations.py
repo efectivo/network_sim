@@ -16,7 +16,7 @@ for N in range(50, 501, 50):
                 ]
             }
 
-        out = runner.run_single_sim(test)
-        writer.write(out)
+            out = runner.run_single_sim(test)
+            writer.write(out)
 
 writer.close()
