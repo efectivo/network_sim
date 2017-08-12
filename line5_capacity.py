@@ -7,17 +7,18 @@ import copy
 def job_gen():
     run_id = 1
     for N in [100, 200, 300, 400, 500]:
-        base_test = {
-            'test': {'id': 5, 'desc': 'Effect of capacity'},
-            'net': {'topology': 'line', 'capacity': 1, 'N': N},
-            'cycles': N ** 2,
-            'protocols': [
-                {'type': 'greedy', 'scheduler': 'LIS'},
-                {'type': 'simple_downhill', 'dh_type': 'odd_even_downhill', 'scheduler': 'LIS'}
-            ]
-        }
-
         for C in range(1, 11):
+
+            base_test = {
+                'test': {'id': 5, 'desc': 'Effect of capacity'},
+                'net': {'topology': 'line', 'capacity': C, 'N': N},
+                'cycles': N ** 2,
+                'protocols': [
+                    {'type': 'greedy', 'scheduler': 'LIS'},
+                    {'type': 'simple_downhill', 'dh_type': 'odd_even_downhill', 'scheduler': 'LIS'}
+                ]
+            }
+
             test = copy.copy(base_test)
             test['pattern'] = {'composite': C, 'topology': 'line', 'type': 'uniform', 'N': N}
             test['run_id'] = run_id

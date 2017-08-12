@@ -1,5 +1,6 @@
 import Queue
 import heapq
+import random
 
 
 class BufferIfc(object):
@@ -17,7 +18,6 @@ class BufferIfc(object):
 
 
 class Fifo(BufferIfc):
-    name = 'FIFO'
     def __init__(self):
         self.queue = Queue.Queue()
         self.values = self.queue
@@ -33,7 +33,6 @@ class Fifo(BufferIfc):
 
 
 class Lifo(BufferIfc):
-    name = 'LIFO'
     def __init__(self):
         self.stack = []
         self.values = self.stack
@@ -49,7 +48,6 @@ class Lifo(BufferIfc):
 
 
 class LongestInSystem(BufferIfc):
-    name = 'LIS'
     def __init__(self):
         self.heap = []
         self.values = self.heap
@@ -69,7 +67,6 @@ class LongestInSystem(BufferIfc):
 
 
 class ShortestInSystem(LongestInSystem):
-    name = 'SIS'
     def __init__(self):
         LongestInSystem.__init__(self)
 
@@ -78,18 +75,50 @@ class ShortestInSystem(LongestInSystem):
 
 
 class ClosestToSrc(LongestInSystem):
-    name = 'CTS'
     def __init__(self):
         LongestInSystem.__init__(self)
 
     def insert(self, packet):
         heapq.heappush(self.heap, (packet.curr_hop, packet))
 
+class FurthestFromSrc(LongestInSystem):
+    def __init__(self):
+        LongestInSystem.__init__(self)
 
-class ClosestToDst(LongestInSystem):
-    name = 'CTD'
+    def insert(self, packet):
+        heapq.heappush(self.heap, (-packet.curr_hop, packet))
+
+
+class ShortestToGo(LongestInSystem):
     def __init__(self):
         LongestInSystem.__init__(self)
 
     def insert(self, packet):
         heapq.heappush(self.heap, (len(packet.route) - packet.curr_hop, packet))
+
+
+class FurthestToGo(LongestInSystem):
+    def __init__(self):
+        LongestInSystem.__init__(self)
+
+    def insert(self, packet):
+        heapq.heappush(self.heap, (packet.curr_hop-len(packet.route), packet))
+
+
+class Rand(BufferIfc):
+    def __init__(self):
+        self.values = []
+        self.count = 0
+
+    def insert(self, packet):
+        self.count += 1
+        self.values.append(packet)
+
+    def extract(self):
+        self.count -= 1
+        i = random.randint(0, self.count) # inclusive
+        return self.values.pop(i)
+
+    def __len__(self):
+        return self.count
+

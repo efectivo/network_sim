@@ -10,6 +10,13 @@ def create(d):
     def get_scheduler(t):
         if t == 'LIS': return forwarding_buffer.LongestInSystem
         elif t == 'SIS': return forwarding_buffer.ShortestInSystem
+        elif t == 'FIFO': return forwarding_buffer.Fifo
+        elif t == 'LIFO': return forwarding_buffer.Lifo
+        elif t == 'FTG': return forwarding_buffer.FurthestToGo
+        elif t == 'STG': return forwarding_buffer.ShortestToGo
+        elif t == 'CTS': return forwarding_buffer.ClosestToSrc
+        elif t == 'FFS': return forwarding_buffer.FurthestFromSrc
+        elif t == 'RAND': return forwarding_buffer.Random
         raise Exception('Unknown scheduler: {}'.format(t))
     scheduling_policy = get_scheduler(d['scheduler'])
 

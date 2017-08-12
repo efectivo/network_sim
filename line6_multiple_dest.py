@@ -12,7 +12,7 @@ def job_gen():
                 for C in range(1, 11):
                     test = {
                         'test': {'id': 6, 'desc': 'Effect of multiple destinations'},
-                        'net': {'topology': 'line', 'capacity': 1, 'N': N},
+                        'net': {'topology': 'line', 'capacity': C, 'N': N},
                         'cycles': N ** 2,
                         'protocols': [
                             {'type': 'greedy', 'scheduler': 'LIS'},
