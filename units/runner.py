@@ -8,8 +8,6 @@ from patterns import pattern_factory
 from protocols import protocol_factory
 
 def run_single_sim(d):
-    print 'Running: ', d
-
     if 'net' not in d:
         raise Exception('net not in test dictionary')
     net = network_factory.create(d['net'])

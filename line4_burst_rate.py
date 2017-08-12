@@ -26,7 +26,7 @@ def job_gen():
             test = {
                 'test': {'id': 4, 'desc': 'Effect of Burstiness vs rate'},
                 'net': {'topology': 'line', 'capacity': 1, 'N': N},
-                'pattern': {'topology':'line', 'type':'burst', 'rate':rate, 'p_n2b':p_n2b, 'pb2n':p_b2n, 'N':N},
+                'pattern': {'topology':'line', 'type':'burst', 'rate':rate, 'p_n2b':p_n2b, 'p_b2n':p_b2n, 'N':N},
                 'cycles': cycles,
                 'run_id': run_id,
                 'protocols': [

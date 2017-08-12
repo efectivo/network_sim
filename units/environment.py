@@ -42,8 +42,6 @@ class Environment(object):
         start = datetime.datetime.now()
 
         for curr_cycle in xrange(self.cycle_number):
-            if (curr_cycle % 10000) == 0:
-                print curr_cycle, (datetime.datetime.now() - start).total_seconds()
             # Create the packets that should be injected in this cycle
             packets = self.pattern.invoke(curr_cycle)
 

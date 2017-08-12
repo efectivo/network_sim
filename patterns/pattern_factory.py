@@ -31,4 +31,11 @@ def create(d):
             else: rate = 1
             return line_patterns.BurstyRate(d['N'], rate, d['p_n2b'], d['p_b2n'])
 
+        if d['type'] == 'split':
+            if 'num_splits' not in d:
+                raise Exception('num_splits is missing in pattern.create')
+            if 'rate' in d: rate = d['rate']
+            else: rate = 1
+            return line_patterns.MultiSplitPathRate(d['N'], d['num_splits'], rate)
+
     raise Exception('Unknwon pattern for {}'.format(d))
