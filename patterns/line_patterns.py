@@ -97,13 +97,3 @@ class MultiSplitPathRate(patterns.PatternIfc):
             prev = curr
         self.add(out, prev, self.N, curr_cycle)
         return out
-
-class PatternComposite(patterns.PatternIfc):
-    def __init__(self, C, pattern_type, **pattern_params):
-        self.patterns = [pattern_type(pattern_params) for _ in C]
-
-    def invoke(self, curr_cycle):
-        out = []
-        for pattern in self.patterns:
-            out += pattern.invoke(curr_cycle)
-        return out

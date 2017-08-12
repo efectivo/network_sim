@@ -1,10 +1,17 @@
-import line_patterns
+import line_patterns, composite_patterns
+import copy
 
 
 def create(d):
     if 'topology' not in d:
         raise Exception('topology is missing in pattern.create')
     topology = d['topology']
+
+    if 'composite' in d:
+        c = d['composite']
+        dcopy = copy.copy(d)
+        del dcopy['composite']
+        return composite_patterns.PatternComposite(c, create, dcopy)
 
     if topology == 'line':
         if 'type' not in d:
