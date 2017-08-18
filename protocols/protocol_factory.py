@@ -1,4 +1,4 @@
-import greedy, down_hill
+import greedy, down_hill, generalized_dh
 import forwarding_buffer
 
 def create(d):
@@ -46,5 +46,8 @@ def create(d):
             return down_hill.SimpleDownHill(down_hill.Types.WDHybrid, p=d['p'], scheduling_policy=scheduling_policy)
 
         else: raise Exception('Unknown downhill type')
+
+    elif d['type'] == 'goed':
+        return generalized_dh.GeneralizedOED(scheduling_policy=scheduling_policy)
 
     raise Exception('Unknown params {}'.format(d))

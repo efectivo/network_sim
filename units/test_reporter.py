@@ -184,3 +184,44 @@ class TestResultsLog(TestResultsSummary):
         TestResultsSummary.finalize(self)
         json.dump(self.d, self.f)
         self.f.close()
+
+
+class CountTotalLoadPerCycle(object):
+    def __init__(self, output_file):
+        self.debugging = False
+        self.test = None
+        self.logger = None
+        self.curr_cycle = None
+        self.output_file = output_file
+
+        self.curr_total_load = 0
+        self.total_load_per_cycle = []
+
+    def is_debugging(self):
+        return self.debugging
+
+    def init(self, test):
+        self.test = test
+        self.network = test.network
+
+    def packet_invoked(self, packet):
+        self.curr_total_load += 1
+
+    def packet_forwarded(self, dest, src, packet):
+        pass
+
+    def packet_received(self, packet):
+        self.curr_total_load -= 1
+
+    def start_cycle(self, curr_cycle):
+        pass
+
+    def cycle_end(self):
+        self.total_load_per_cycle.append(self.curr_total_load)
+
+    def test_finished(self, test_time):
+        pass
+
+    def finalize(self):
+        s = pd.Series(self.total_load_per_cycle)
+        s.to_hdf(self.output_file, 'abc')

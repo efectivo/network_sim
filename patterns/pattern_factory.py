@@ -1,4 +1,4 @@
-import line_patterns, composite_patterns
+import line_patterns, composite_patterns, diamond_patterns
 import copy
 
 
@@ -44,5 +44,21 @@ def create(d):
             if 'rate' in d: rate = d['rate']
             else: rate = 1
             return line_patterns.MultiSplitPathRate(d['N'], d['num_splits'], rate)
+
+    elif topology == 'diamond':
+        if 'type' not in d:
+            raise Exception('type is missing in pattern.create')
+
+        if 'N' not in d:
+            raise Exception('N is missing in pattern.create')
+
+        if 'k' not in d:
+            raise Exception('k is missing in pattern.create')
+
+        dashed = 'dashed' in d and d['dashed']
+        rate = 1 if 'rate' not in d else d['rate']
+
+        if d['type'] == 'uniform_src_poisson_rate':
+            return diamond_patterns.UniformPoissonRate(d['N'], d['k'], dashed, rate)
 
     raise Exception('Unknwon pattern for {}'.format(d))

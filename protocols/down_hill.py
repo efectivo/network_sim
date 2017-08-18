@@ -111,73 +111,73 @@ class SimpleDownHill(forwarding_protocol.ForwardingProtocol):
             return 0
 
 
-# DownHill for trees with any constant C
-class DownHillProtocol(forwarding_protocol.ForwardingProtocol):
-    def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
-        forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type)
-        self.capacity = None
-
-    def init(self, test):
-        forwarding_protocol.ForwardingProtocol.init(self, test)
-
-        for n1, n2 in self.network.edges_iter():
-            cap = self.network[n1][n2]['cap']
-            if not self.capacity:
-                self.capacity = cap
-            assert cap == self.capacity
-
-    def run_communication_step(self):
-        self.to_send = collections.defaultdict(int)
-        for node_name in self.network.nodes_iter():
-            self.run_communication_step_per_node(node_name)
-
-    def run_communication_step_per_node(self, node_name):
-        node = self.network.node[node_name]
-        if not node.parents:
-            return
-
-        X = [self.test.get_edge_buf_size(node_name, parent) for parent in node.parents]
-        buffer_sizes_sum = sum(X)
-
-        if buffer_sizes_sum == 0:
-            return
-
-        f = node.curr_total_packets
-        ro = self.capacity
-
-        def VL(L):
-            return int(np.ceil(float(L) / ro))
-
-        VL_f = VL(f)
-        is_odd = VL_f & 1
-
-        max_buffer = np.max(X)
-        if self.use_odd_even:
-            if not (VL(max_buffer) > VL_f or VL(max_buffer) == VL_f and is_odd):
-                return
-        else:  # Regular downhill
-            if VL(max_buffer) <= VL_f:
-                return
-
-        def L_j(load, j):
-            return max(load - j + 1, 0)
-
-        if is_odd:
-            q = sum([L_j(tmp, (VL_f - 1) * ro + 1) for tmp in X])
-        else:
-            q = sum([L_j(tmp, VL_f * ro + 1) for tmp in X])
-
-        num_to_send = min(q, ro)
-
-        while num_to_send > 0:
-            argmax = np.argmax(X)
-            assert X[argmax] > 0
-            X[argmax] -= 1
-            parent = node.parents[argmax]
-            self.to_send[node.name, parent] += 1
-            num_to_send -= 1
-
-    def run_forwarding_step(self):
-        for (dest, src), count in self.to_send.iteritems():
-            self.test.forward(dest, src, count)
-
+# # DownHill for trees with any constant C
+# class DownHillProtocol(forwarding_protocol.ForwardingProtocol):
+#     def __init__(self, buffer_type=forwarding_buffer.LongestInSystem):
+#         forwarding_protocol.ForwardingProtocol.__init__(self, buffer_type)
+#         self.capacity = None
+#
+#     def init(self, test):
+#         forwarding_protocol.ForwardingProtocol.init(self, test)
+#
+#         for n1, n2 in self.network.edges_iter():
+#             cap = self.network[n1][n2]['cap']
+#             if not self.capacity:
+#                 self.capacity = cap
+#             assert cap == self.capacity
+#
+#     def run_communication_step(self):
+#         self.to_send = collections.defaultdict(int)
+#         for node_name in self.network.nodes_iter():
+#             self.run_communication_step_per_node(node_name)
+#
+#     def run_communication_step_per_node(self, node_name):
+#         node = self.network.node[node_name]
+#         if not node.parents:
+#             return
+#
+#         X = [self.test.get_edge_buf_size(node_name, parent) for parent in node.parents]
+#         buffer_sizes_sum = sum(X)
+#
+#         if buffer_sizes_sum == 0:
+#             return
+#
+#         f = node.curr_total_packets
+#         ro = self.capacity
+#
+#         def VL(L):
+#             return int(np.ceil(float(L) / ro))
+#
+#         VL_f = VL(f)
+#         is_odd = VL_f & 1
+#
+#         max_buffer = np.max(X)
+#         if self.use_odd_even:
+#             if not (VL(max_buffer) > VL_f or VL(max_buffer) == VL_f and is_odd):
+#                 return
+#         else:  # Regular downhill
+#             if VL(max_buffer) <= VL_f:
+#                 return
+#
+#         def L_j(load, j):
+#             return max(load - j + 1, 0)
+#
+#         if is_odd:
+#             q = sum([L_j(tmp, (VL_f - 1) * ro + 1) for tmp in X])
+#         else:
+#             q = sum([L_j(tmp, VL_f * ro + 1) for tmp in X])
+#
+#         num_to_send = min(q, ro)
+#
+#         while num_to_send > 0:
+#             argmax = np.argmax(X)
+#             assert X[argmax] > 0
+#             X[argmax] -= 1
+#             parent = node.parents[argmax]
+#             self.to_send[node.name, parent] += 1
+#             num_to_send -= 1
+#
+#     def run_forwarding_step(self):
+#         for (dest, src), count in self.to_send.iteritems():
+#             self.test.forward(dest, src, count)
+#

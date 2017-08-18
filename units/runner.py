@@ -13,6 +13,7 @@ def run_single_sim(d):
     net = network_factory.create(d['net'])
     if 'pattern' not in d:
         raise Exception('pattern not in test dictionary')
+    d['pattern'].update(d['net'])
     pattern = pattern_factory.create(d['pattern'])
     if 'cycles' not in d:
         raise Exception('cycles not in test dictionary')
@@ -31,12 +32,18 @@ def run_single_sim(d):
         reporter = None
         if 'log_path' in protocol_dict:
             reporter = test_reporter.TestResultsLog(protocol_dict['log_path'])
+        elif 'total_count_path' in protocol_dict:
+            reporter = test_reporter.CountTotalLoadPerCycle(protocol_dict['total_count_path'])
 
         test = tested_unit.Test(dcopy, protocol, reporter=reporter)
         tests.append(test)
 
     env = environment.Environment(setup, tests)
     env.run()
+
+    # TODO
+    if type(test.reporter) == test_reporter.CountTotalLoadPerCycle:
+        return
 
     d['result'] = []
     for test in tests:

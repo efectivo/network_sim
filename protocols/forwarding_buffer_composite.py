@@ -3,7 +3,6 @@ import collections
 class BufferComposite(object):
     def __init__(self, buffer_type):
         self.buffers = collections.defaultdict(buffer_type)
-        self.name = buffer_type().name
 
     def insert(self, packet):
         two_hops_node = packet.get_two_hops()
