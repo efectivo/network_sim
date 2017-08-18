@@ -6,7 +6,7 @@ import copy
 
 def job_gen():
     run_id = 1
-    for N in [100, 200, 300, 400, 500]:
+    for N in range(50, 301, 50):
         for C in range(1, 11):
 
             base_test = {
@@ -24,7 +24,7 @@ def job_gen():
             test['run_id'] = run_id
             yield test
 
-            probs = map(lambda x: 1./x, [2,5,10,25,50,75,100])
+            probs = [.9, .5, .1]
             for p_n2b, p_b2n in itertools.product(probs, probs):
                 test = copy.copy(base_test)
                 test['pattern'] = {'composite': C, 'topology':'line', 'type':'burst', 'p_n2b':p_n2b, 'p_b2n':p_b2n, 'N':N}
@@ -36,7 +36,7 @@ def job_run(test):
     print test['pattern']
     return runner.run_single_sim(test)
 
-p = multiprocessing.Pool(8)
+p = multiprocessing.Pool(15)
 writer = results_to_file.ResultHandler('line5')
 all_results = p.map(job_run, job_gen())
 for result in all_results:

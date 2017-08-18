@@ -1,6 +1,5 @@
 from units import runner, results_to_file
 
-writer = results_to_file.ResultHandler('diamond1')
 def job_gen():
     run_num = 1
     for dashed in [0, 1]:
@@ -39,15 +38,14 @@ def job_gen():
                 yield test
 
 
-writer.close()
+class Counter:
+    QQ = 0
 
-QQ = 0
 def job_run(test):
-    global QQ
-    QQ += 1
-    print QQ, test
+    Counter.QQ += 1
+    print Counter.QQ, test
     out = runner.run_single_sim(test)
-    print QQ, out
+    print Counter.QQ, out
     return out
 
 import multiprocessing
