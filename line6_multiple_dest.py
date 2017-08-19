@@ -5,8 +5,8 @@ import copy
 
 
 def job_gen():
-    num_runs = 5
-    for N in [100, 200, 300, 400, 500]:
+    num_runs = 1
+    for N in range(50, 301, 50):
         for run_id in range(num_runs):
             for k in range(1, 6):
                 for C in range(1, 11):
@@ -29,7 +29,7 @@ def job_run(test):
     print test['pattern']
     return runner.run_single_sim(test)
 
-p = multiprocessing.Pool(8)
+p = multiprocessing.Pool(15)
 writer = results_to_file.ResultHandler('line6')
 all_results = p.map(job_run, job_gen())
 for result in all_results:
