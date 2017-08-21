@@ -2,14 +2,15 @@ import forwarding_protocol, forwarding_buffer, forwarding_buffer_composite, down
 import collections, networkx as nx, numpy as np
 
 
-class GeneralizedOED(forwarding_protocol.ForwardingProtocol):
-    def __init__(self, scheduling_policy=forwarding_buffer.LongestInSystem):
-        forwarding_protocol.ForwardingProtocol.__init__(self)
+class GeneralizedOED(down_hill.SimpleDownHill):
+    def __init__(self, dh_type, p=1, scheduling_policy=forwarding_buffer.LongestInSystem):
+        down_hill.SimpleDownHill.__init__(self, dh_type, p)
         self.set_scheduling_policy(lambda: forwarding_buffer_composite.BufferComposite(scheduling_policy))
         self.reversed_net = None
         self.to_send = None
 
     def init(self, test):
+        #down_hill.SimpleDownHill.init(self, test)
         forwarding_protocol.ForwardingProtocol.init(self, test)
         self.reversed_net = nx.reverse(self.network)
 
@@ -52,17 +53,13 @@ class GeneralizedOED(forwarding_protocol.ForwardingProtocol):
 
                 e_j = self.test.get_edge_attr(j, node)
                 e_j_size = len(e_j['buf'])
-                if (self.should_forward_odd_even(e_i_size, e_j_size)):
+                if (self.should_forward(e_i_size, e_j_size)):
                     self.to_send[i, node, j] += 1
                     pb_j_sizes[index] -= 1
                     cap -= 1
                 else:
                     # Set to zero since the OED rule doesn't apply
                     pb_j_sizes[index] = 0
-
-    def should_forward_odd_even(self, buf_size, dest_buf_size):
-        is_odd = dest_buf_size & 1
-        return 1 if buf_size > dest_buf_size or buf_size == dest_buf_size and is_odd else 0
 
     def run_forwarding_step(self):
         for (node, next_node, two_steps), count in self.to_send.iteritems():

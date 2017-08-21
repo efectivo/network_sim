@@ -11,6 +11,7 @@ class Types:
     DGHybrid = 3
     WGHybrid = 4
     WDHybrid = 5
+    OGHybrid = 6
 
 def type_to_string(t):
     if t == Types.Downhill: return 'Downhill'
@@ -19,6 +20,7 @@ def type_to_string(t):
     if t == Types.DGHybrid: return 'DGHybrid'
     if t == Types.WGHybrid: return 'WGHybrid'
     if t == Types.WDHybrid: return 'WDHybrid'
+    if t == Types.OGHybrid: return 'OGHybrid'
     raise
 
 # DownHill for line graph
@@ -37,6 +39,7 @@ class SimpleDownHill(forwarding_protocol.ForwardingProtocol):
         elif self.dh_type == Types.DGHybrid: self.should_forward = self.should_forward_dgh
         elif self.dh_type == Types.WGHybrid: self.should_forward = self.should_forward_wgh
         elif self.dh_type == Types.WDHybrid: self.should_forward = self.should_forward_wdh
+        elif self.dh_type == Types.OGHybrid: self.should_forward = self.should_forward_ogh
         else: raise
 
     def init(self, test):
@@ -78,6 +81,10 @@ class SimpleDownHill(forwarding_protocol.ForwardingProtocol):
     def should_forward_odd_even(self, buf_size, dest_buf_size):
         is_odd = dest_buf_size & 1
         return 1 if buf_size > dest_buf_size or buf_size == dest_buf_size and is_odd else 0
+
+    def should_forward_ogh(self, buf_size, dest_buf_size):
+        is_odd = dest_buf_size & 1
+        return 1 if buf_size > dest_buf_size or buf_size == dest_buf_size and is_odd or random.random() < self.p else 0
 
     def should_forward_dgh(self, buf_size, dest_buf_size):
         return 1 if buf_size > dest_buf_size or random.random() < self.p else 0

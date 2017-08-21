@@ -23,31 +23,31 @@ def create(d):
     if d['type'] == 'greedy':
         return greedy.GreedyProtocol(scheduling_policy=scheduling_policy)
 
-    if d['type'] == 'simple_downhill':
+    if d['type'] == 'simple_downhill' or d['type'] == 'goed':
         if 'dh_type' not in d:
             raise Exception('dh_type is missing in protocol.create')
         flavor = d['dh_type']
+        protocol = down_hill.SimpleDownHill if d['type'] == 'simple_downhill' else generalized_dh.GeneralizedOED
 
         if flavor == 'downhill':
-            return down_hill.SimpleDownHill(down_hill.Types.Downhill, scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.Downhill, scheduling_policy=scheduling_policy)
         if flavor == 'weak_downhill':
-            return down_hill.SimpleDownHill(down_hill.Types.WeakDownhill, scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.WeakDownhill, scheduling_policy=scheduling_policy)
         if flavor == 'odd_even_downhill':
-            return down_hill.SimpleDownHill(down_hill.Types.OddEvenDownhill, scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.OddEvenDownhill, scheduling_policy=scheduling_policy)
 
         if 'p' not in d:
             raise Exception('p is missing in protocol.create')
 
         if flavor == 'dgh':
-            return down_hill.SimpleDownHill(down_hill.Types.DGHybrid, p=d['p'], scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.DGHybrid, p=d['p'], scheduling_policy=scheduling_policy)
         if flavor == 'wgh':
-            return down_hill.SimpleDownHill(down_hill.Types.WGHybrid, p=d['p'], scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.WGHybrid, p=d['p'], scheduling_policy=scheduling_policy)
         if flavor == 'wdh':
-            return down_hill.SimpleDownHill(down_hill.Types.WDHybrid, p=d['p'], scheduling_policy=scheduling_policy)
+            return protocol(down_hill.Types.WDHybrid, p=d['p'], scheduling_policy=scheduling_policy)
+        if flavor == 'ogh':
+            return protocol(down_hill.Types.OGHybrid, p=d['p'], scheduling_policy=scheduling_policy)
 
         else: raise Exception('Unknown downhill type')
-
-    elif d['type'] == 'goed':
-        return generalized_dh.GeneralizedOED(scheduling_policy=scheduling_policy)
 
     raise Exception('Unknown params {}'.format(d))

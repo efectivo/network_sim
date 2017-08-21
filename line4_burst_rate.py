@@ -7,7 +7,7 @@ def job_gen():
     N = 200
     cycles = 50000
     run_id = 1
-    for rate in [1.1, 1, 0.99, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5]:
+    for rate in [1, 0.99, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5]:
         test = {
             'test': {'id': 4, 'desc': 'Effect of Decreased Rate'},
             'net': {'topology': 'line', 'capacity': 1, 'N': N},

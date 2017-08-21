@@ -1,4 +1,4 @@
-import line, diamond
+import line, diamond, grid
 
 def create(d):
     if 'topology' not in d:
@@ -14,5 +14,9 @@ def create(d):
         if 'N' not in d or 'k' not in d:
             raise Exception('N or k are missing in network.create')
         return diamond.create_diamond(d['N'], d['k'], dashed)
+    elif topology == 'grid':
+        if 'N' not in d:
+            raise Exception('N is missing in network.create')
+        return grid.create_grid(d['N'])
 
     raise Exception('Unknown params {}'.format(d))

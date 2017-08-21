@@ -31,21 +31,15 @@ def job_gen():
                     'cycles': 100000,
                     'protocols': [
                         {'type': 'greedy', 'scheduler': 'LIS'},
-                        {'type': 'goed', 'scheduler': 'LIS'}
+                        {'type': 'goed', 'dh_type': 'odd_even_downhill', 'scheduler': 'LIS'}
                     ]
                 }
 
                 yield test
 
 
-class Counter:
-    QQ = 0
-
 def job_run(test):
-    Counter.QQ += 1
-    print Counter.QQ, test
     out = runner.run_single_sim(test)
-    print Counter.QQ, out
     return out
 
 import multiprocessing

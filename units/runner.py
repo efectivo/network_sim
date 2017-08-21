@@ -1,8 +1,8 @@
 from units import environment, tested_unit, test_reporter
-import itertools
+import multiprocessing
 import logging
-import json
 import copy
+import results_to_file
 from networks import network_factory
 from patterns import pattern_factory
 from protocols import protocol_factory
@@ -59,4 +59,14 @@ def run_single_sim(d):
 
     d['total_seconds'] = test.reporter.test_time.total_seconds()
     return d
+
+
+def run_parallel(cores, job_generator, name):
+    import multiprocessing
+    p = multiprocessing.Pool(cores)
+    writer = results_to_file.ResultHandler(name)
+    all_results = p.map(run_single_sim, job_generator())
+    for result in all_results:
+        writer.write(result)
+    writer.close()
 

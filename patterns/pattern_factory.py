@@ -1,4 +1,4 @@
-import line_patterns, composite_patterns, diamond_patterns
+import line_patterns, composite_patterns, diamond_patterns, grid_patterns
 import copy
 
 
@@ -60,5 +60,15 @@ def create(d):
 
         if d['type'] == 'uniform_src_poisson_rate':
             return diamond_patterns.UniformPoissonRate(d['N'], d['k'], dashed, rate)
+
+    elif topology == 'grid':
+        if 'type' not in d:
+            raise Exception('type is missing in pattern.create')
+
+        if 'N' not in d or 'rate' not in d:
+            raise Exception('N or rate are missing in pattern.create')
+
+        if d['type'] == 'random_one_bent':
+            return grid_patterns.RandomNodesOneBentRoute(d['N'], d['rate'])
 
     raise Exception('Unknwon pattern for {}'.format(d))
