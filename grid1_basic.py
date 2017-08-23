@@ -4,8 +4,8 @@ import numpy as np
 
 def job_gen():
     for N in range(4, 21, 2):
-        for rate_power in ['1', '3/2.']:
-            rate = np.power(2, rate_power)
+        for rate_power in [1, 3/2.]:
+            rate = np.power(N, rate_power)
             test = {
                 'test': {},
                 'net': {'topology': 'grid', 'N': N},
