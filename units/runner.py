@@ -34,6 +34,8 @@ def run_single_sim(d):
             reporter = test_reporter.TestResultsLog(protocol_dict['log_path'])
         elif 'total_count_path' in protocol_dict:
             reporter = test_reporter.CountTotalLoadPerCycle(protocol_dict['total_count_path'])
+        elif 'create_df' in protocol_dict:
+            reporter = test_reporter.TestResultsHistory(protocol_dict['create_df'])
 
         test = tested_unit.Test(dcopy, protocol, reporter=reporter)
         tests.append(test)

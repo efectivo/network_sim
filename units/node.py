@@ -8,13 +8,6 @@ class Node(object):
         self.name = name
         self.curr_total_packets = 0
 
-        # def get_capacity_dict(nodes):
-        #     d = {}
-        #     for node in nodes:
-        #         edge_data = network.edge[node][self.name]
-        #         d[node] = edge_data['cap'] if 'cap' in edge_data else 1
-        #     return d
-
         self.parents = network.predecessors(self.name)
         self.children = network.successors(self.name)
 

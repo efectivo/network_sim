@@ -33,7 +33,7 @@ class TestResultsSummary(object):
     def init(self, test):
         self.test = test
         self.network = test.network
-        self.logger = logging.getLogger('test')
+        self.logger = logging.getLogger(test.desc['test']['desc'])
 
     def start_cycle(self, cycle):
         self.curr_cycle = cycle
@@ -102,6 +102,7 @@ class TestResultsHistory(TestResultsSummary):
         self.output_file = output_file
 
     def cycle_end(self):
+        TestResultsSummary.cycle_end(self)
         for n1, n2 in self.network.edges_iter():
             buf_size = len(self.network[n1][n2]['buf'])
             self.curr_max_buffer_size = max(self.curr_max_buffer_size, buf_size)
@@ -111,7 +112,7 @@ class TestResultsHistory(TestResultsSummary):
         TestResultsSummary.finalize(self)
         df = pd.DataFrame(self.stats).T
         df.columns = ['BUF'] # Relevant only when there is more than one port
-        df.index.names = ['NODE', 'CYCLE']
+        df.index.names = ['SRC', 'DEST', 'CYCLE']
         if self.output_file.endswith('.csv'):
             df.to_csv(self.output_file)
         else:

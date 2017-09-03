@@ -53,7 +53,7 @@ class GeneralizedOED(down_hill.SimpleDownHill):
 
                 e_j = self.test.get_edge_attr(j, node)
                 e_j_size = len(e_j['buf'])
-                if (self.should_forward(e_i_size, e_j_size)):
+                if self.should_forward(e_i_size, e_j_size) > 0:
                     self.to_send[i, node, j] += 1
                     pb_j_sizes[index] -= 1
                     cap -= 1
