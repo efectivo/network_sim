@@ -6,22 +6,20 @@ import copy
 
 def job_gen():
     num_runs = 1
-    for N in range(50, 301, 50):
-        for run_id in range(num_runs):
-            for k in range(1, 6):
-                for C in range(1, 11):
-                    test = {
-                        'test': {'id': 6, 'desc': 'Effect of multiple destinations'},
-                        'net': {'topology': 'line', 'capacity': C, 'N': N},
-                        'cycles': N ** 2,
-                        'protocols': [
-                            {'type': 'greedy', 'scheduler': 'LIS'},
-                            {'type': 'simple_downhill', 'dh_type': 'odd_even_downhill', 'scheduler': 'LIS'}
-                        ],
-                        'run_id': run_id,
-                        'pattern': {'composite': C, 'topology': 'line', 'type': 'split', 'N': N, 'num_splits': k}
-                    }
-                    yield test
+    N = 300
+    for k in range(1, 6):
+        for C in range(1, 11):
+            test = {
+                'test': {'id': 6, 'desc': 'Effect of multiple destinations'},
+                'net': {'topology': 'line', 'capacity': C, 'N': N},
+                'cycles': N ** 2,
+                'protocols': [
+                    {'type': 'greedy', 'scheduler': 'LIS'},
+                    {'type': 'simple_downhill', 'dh_type': 'odd_even_downhill', 'scheduler': 'LIS'}
+                ],
+                'pattern': {'composite': C, 'topology': 'line', 'type': 'split', 'N': N, 'num_splits': k}
+            }
+            yield test
 
 
 

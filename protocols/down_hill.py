@@ -96,23 +96,11 @@ class SimpleDownHill(forwarding_protocol.ForwardingProtocol):
         return 1 if buf_size > dest_buf_size or buf_size >= dest_buf_size and random.random() < self.p else 0
 
     def should_forward_general_cap_downhill(self, src_buf_size, dest_buf_size):
-        def VL(L):
-            return int(np.ceil(float(L) / self.capacity))
-
-        vl_src = VL(src_buf_size)
-        vl_dest = VL(dest_buf_size)
-        is_odd = vl_dest & 1
-
         c = self.capacity
-        if is_odd:
-            if vl_src >= vl_dest:
-                r = min(c, src_buf_size - c * (vl_dest - 1))
-                assert r >= 0
-                return r
-            return 0
-        else:
-            if vl_src > vl_dest:
-                r = min(c, src_buf_size - c * vl_dest)
-                assert r >= 0
-                return r
-            return 0
+
+        def VL(L):
+            return int(np.ceil(float(L) / c))
+
+        if self.should_forward_odd_even(VL(src_buf_size), VL(dest_buf_size)):
+            return min(c, src_buf_size)
+        return 0
